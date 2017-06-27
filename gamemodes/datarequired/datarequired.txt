@@ -1,0 +1,9 @@
+"datarequired"
+{
+	"base"		"base"
+	"title"		"[DATA REQUIRED]"
+	"maps"		"^data_"
+	"menusystem"	"1"
+	"workshopid"	""
+}
+
