@@ -19,6 +19,8 @@ local beammat = "cable/redlaser.vmt"
 local beamdecaydelay = 0.5
 local beamcolor = Color(255,0,0)
 
+local bouncesound = Sound("weapons/physcannon/energy_bounce1.wav")
+
 function ENT:Initialize()
 
 	self:SetModel("models/props_junk/wood_crate001a.mdl")
@@ -72,6 +74,15 @@ if CLIENT then
 		self:DrawModel()
 		
 	end
+else
+	function ENT:Think()
+		if self.TOKILL and CurTime() > self.TOKILL then self:Remove() end
+		if self.TONONSOLID then
+			self:SetNotSolid(true)
+			self:SetMoveType(MOVETYPE_NONE)
+			self.TONONSOLID = nil
+		end
+	end
 end
 
 function ENT:OnRemove()
@@ -79,12 +90,14 @@ function ENT:OnRemove()
 end
 
 function ENT:StartTouch(ent)
-	if ent:IsPlayer() then
+	if ent:IsPlayer() and ent ~= self.Owner then
 		local d = DamageInfo()
 		d:SetDamage(100)
 		d:SetDamageType(DMG_DISSOLVE)
 		d:SetAttacker(self.Owner)
 		d:SetInflictor(self)
+		d:SetDamagePosition(self:GetPos())
+		d:SetDamageForce(self:GetVelocity())
 		ent:TakeDamageInfo(d)
 		
 		self:Dissipate()
@@ -93,6 +106,7 @@ end
 
 function ENT:PhysicsCollide(data, physobj)
 	self.BounceCount = self.BounceCount + 1
+	self:EmitSound(bouncesound)
 	if self.BounceCount > self.MaxBounces then 
 		self:Dissipate()
 	end
@@ -100,11 +114,8 @@ end
 
 function ENT:Dissipate()
 	self:SetVelocity(Vector(0,0,0))
-	self:SetMoveType(MOVETYPE_NONE)
-	self:SetNotSolid(true)
-	timer.Simple(beamdecaydelay + 0.5, function()
-		if IsValid(self) then self:Remove() end
-	end)
+	self.TONONSOLID = true
+	self.TOKILL = CurTime() + beamdecaydelay
 end
 
 function ENT:UpdateTransmitState()

@@ -192,31 +192,36 @@ function OpenBlock(x,y, bool, forced)
 	end
 end
 
-hook.Add("InitPostEntity", "data_defaultmap", function()
+local delaybase = 0.1
+local extrablockdelay = 0.2
+function GM:LoadFullMap()
 	for k,v in pairs(GAMEMODE.CurrentMap.wallx) do
 		for k2,v2 in pairs(v) do
 			local ent = ents.FindByName("wallx-"..k.."-"..k2)[1]
-			if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end
+			timer.Simple((k+k2)*delaybase, function() if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end end)
 		end
 	end
 	for k,v in pairs(GAMEMODE.CurrentMap.wally) do
 		for k2,v2 in pairs(v) do
 			local ent = ents.FindByName("wally-"..k.."-"..k2)[1]
-			if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end
+			timer.Simple((k+k2)*delaybase, function() if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end end)
 		end
 	end
 	for k,v in pairs(GAMEMODE.CurrentMap.block) do
 		for k2,v2 in pairs(v) do
 			local ent = ents.FindByName("block-"..k.."-"..k2)[1]
-			if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end
+			timer.Simple((k+k2)*delaybase + extrablockdelay, function() if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end end)
 		end
 	end
 	for k,v in pairs(GAMEMODE.CurrentMap.corner) do
 		for k2,v2 in pairs(v) do
 			local ent = ents.FindByName("corner-"..k.."-"..k2)[1]
-			if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end
+			timer.Simple((k+k2)*delaybase, function() if IsValid(ent) then ent:Fire(v2 and "Close" or "Open") end end)
 		end
 	end
+end
+hook.Add("InitPostEntity", "data_defaultmap", function()
+	GAMEMODE:LoadFullMap()
 end)
 
 function GM:ShowHelp(ply)
@@ -285,4 +290,483 @@ end)
 
 function IsValidGridCoordinate(x,y)
 	return GAMEMODE.CurrentMap.block[x] and (GAMEMODE.CurrentMap.block[x][y] == false)
+end
+
+function GM:SaveCurrentMap(name)
+	if not file.Exists( "data_required/", "DATA" ) then
+		file.CreateDir( "data_required" )
+	end
+	file.Write("data_required/"..name..".txt", util.TableToJSON(self.CurrentMap))
+end
+
+function GM:OutputCurrentMapAsCode()
+	print("{")
+	print("\twallx = {")
+	for k,v in pairs(self.CurrentMap.wallx) do
+		local str = "\t\t["..k.."] = {"
+		for k2,v2 in pairs(v) do
+			str = str .. "["..k2.."]="..tostring(v2)..", "
+		end
+		str = str.."},"
+		print(str)
+	end
+	print("\t},")
+	print("\twally = {")
+	for k,v in pairs(self.CurrentMap.wally) do
+		local str = "\t\t["..k.."] = {"
+		for k2,v2 in pairs(v) do
+			str = str .. "["..k2.."]="..tostring(v2)..", "
+		end
+		str = str.."},"
+		print(str)
+	end
+	print("\t},")
+	print("\tblock = {")
+	for k,v in pairs(self.CurrentMap.block) do
+		local str = "\t\t["..k.."] = {"
+		for k2,v2 in pairs(v) do
+			str = str .. "["..k2.."]="..tostring(v2)..", "
+		end
+		str = str.."},"
+		print(str)
+	end
+	print("\t},")
+	print("\tcorner = {")
+	for k,v in pairs(self.CurrentMap.corner) do
+		local str = "\t\t["..k.."] = {"
+		for k2,v2 in pairs(v) do
+			str = str .. "["..k2.."]="..tostring(v2)..", "
+		end
+		str = str.."},"
+		print(str)
+	end
+	print("\t},")
+	print("}")
+end
+
+local defaultmaps = {
+	{ -- Something? (1)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[2] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[5] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[12] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[11] = {[1]=true, [2]=false, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=true, },
+			[4] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[10] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[9] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[8] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[3] = {[1]=true, [2]=false, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=true, },
+			[7] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[2] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[5] = {[0]=true, [1]=false, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=false, [8]=true, },
+			[12] = {[0]=false, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[11] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[10] = {[0]=true, [1]=false, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=false, [8]=true, },
+			[9] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[8] = {[0]=false, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[3] = {[0]=false, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[7] = {[0]=false, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[1] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+		},
+		block = {
+			[0] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[2] = {[0]=true, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[14] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[13] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[5] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=true, [1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[11] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[4] = {[0]=true, [1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[10] = {[0]=true, [1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[3] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+		},
+		corner = {
+			[14] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[5] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[12] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[11] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[10] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[9] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[8] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[3] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[7] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[6] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+		},
+	},
+	
+	{ -- Classic Maze (2)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[12] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[11] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[4] = {[1]=true, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[10] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=true, [6]=true, [7]=false, [8]=true, },
+			[9] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[8] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[3] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[7] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[6] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[0]=false, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[11] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=true, [2]=false, [3]=true, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[3] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[6] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=false, },
+		},
+		block = {
+			[0] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[2] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[14] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[13] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[5] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[12] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[11] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[4] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[10] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[9] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[8] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[3] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[7] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[6] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+		},
+		corner = {
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[5] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[12] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[4] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[10] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[9] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[8] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[3] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[7] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[6] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=false, [6]=true, [7]=true, [8]=false, },
+		},
+	},
+
+	{ --Central Pillar (3)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[10] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[9] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[8] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=true, [2]=false, [3]=true, [4]=true, [5]=true, [6]=false, [7]=false, [8]=true, },
+			[6] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[0]=false, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[4] = {[0]=false, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[3] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+		},
+		block = {
+			[0] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[2] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[14] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[13] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[5] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[12] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[11] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[4] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[10] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[9] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[8] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[3] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[7] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[6] = {[0]=true, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+		},
+		corner = {
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[4] = {[1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=true, },
+			[10] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[9] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[8] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+		},
+	},
+	
+	{ -- Layers (4)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[10] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[9] = {[1]=true, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[8] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[6] = {[1]=true, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=true, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[12] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[11] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[3] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+		},
+		block = {
+			[0] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[2] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[14] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[13] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[5] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[11] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[3] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+		},
+		corner = {
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[10] = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[9] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[8] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+		},
+	},
+
+	{ -- Chokepoint (5)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[5] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[10] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[9] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[8] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=false, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[6] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=false, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[2] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[11] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[9] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[8] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[3] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[7] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[13] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[6] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=false, [5]=true, [6]=true, [7]=true, [8]=true, },
+		},
+		block = {
+			[0] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[2] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[14] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[3] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[6] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+		},
+		corner = {
+			[14] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[2] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[5] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[12] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[11] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[10] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[9] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+			[8] = {[1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[3] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[7] = {[1]=false, [2]=false, [3]=true, [4]=false, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[1] = {[1]=true, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=true, },
+			[13] = {[1]=true, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=true, [8]=true, },
+			[6] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=false, },
+		},
+	},
+	
+	{ -- Cramped (6)
+		wallx = {
+			[0] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[10] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[9] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=true, [7]=true, [8]=false, },
+			[8] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[6] = {[1]=false, [2]=true, [3]=true, [4]=false, [5]=false, [6]=true, [7]=true, [8]=false, },
+		},
+		wally = {
+			[14] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[12] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[4] = {[0]=false, [1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[10] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=true, [6]=false, [7]=false, [8]=false, },
+			[9] = {[0]=false, [1]=false, [2]=false, [3]=true, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[8] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[3] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[0]=false, [1]=false, [2]=true, [3]=false, [4]=true, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[1] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[0]=false, [1]=false, [2]=false, [3]=false, [4]=false, [5]=true, [6]=false, [7]=false, [8]=false, },
+		},
+		block = {
+			[0] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[1] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[2] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[14] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[13] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[5] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[12] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[11] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[4] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[10] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[9] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[8] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[3] = {[0]=true, [1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=true, [8]=true, },
+			[7] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+			[6] = {[0]=true, [1]=true, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=true, },
+		},
+		corner = {
+			[14] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[2] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[5] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[12] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[11] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[4] = {[1]=false, [2]=true, [3]=false, [4]=false, [5]=false, [6]=false, [7]=true, [8]=false, },
+			[10] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=false, [6]=true, [7]=false, [8]=false, },
+			[9] = {[1]=false, [2]=false, [3]=true, [4]=false, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[8] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=false, [7]=true, [8]=false, },
+			[3] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[7] = {[1]=false, [2]=true, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+			[1] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[13] = {[1]=false, [2]=false, [3]=false, [4]=false, [5]=false, [6]=false, [7]=false, [8]=false, },
+			[6] = {[1]=false, [2]=false, [3]=true, [4]=true, [5]=true, [6]=true, [7]=false, [8]=false, },
+		},
+	},
+
+}
+
+function GM:LoadRandomMap()
+	local map = defaultmaps[math.random(#defaultmaps)]
+	--local map = defaultmaps[5]
+	if map then
+		self.CurrentMap = table.Copy(map)
+		self:LoadFullMap()
+		self:ResetWeaponGridList()
+	end
 end

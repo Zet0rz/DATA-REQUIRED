@@ -12,15 +12,15 @@ SWEP.Base			= "proto_base"
 
 SWEP.Author			= "Zet0r"
 SWEP.Contact		= "youtube.com/Zet0r"
-SWEP.Purpose		= "Drop a melonbomb from Melonbomber that blows up the grid on X and Y axis"
-SWEP.Instructions	= "Get it from a weapon drop"
+SWEP.Purpose		= "Drop a melonbomb from Melonbomber that blows up a line in both axis"
+SWEP.Instructions	= "Press LMB to drop melonbomb at your current grid position"
 
 SWEP.Spawnable			= false
 SWEP.AdminSpawnable		= true
 
 SWEP.HoldType = "grenade"
 
-local delay = 4
+local delay = 1.5
 
 SWEP.AttachModel = "models/props_junk/watermelon01.mdl"
 SWEP.AttachScale = 1
@@ -28,6 +28,7 @@ SWEP.AttachScale = 1
 -- TODO: Make explosion sound only play once
 
 function SWEP:PrimaryAttack()
+	if CLIENT then return end
 	local x,y = self.Owner:GetGridCoordinate()
 	if IsValidGridCoordinate(x,y) then
 		local ply = self.Owner
@@ -87,6 +88,7 @@ function SWEP:PrimaryAttack()
 				d:SetAttacker(ply)
 				d:SetAttacker(bomb)
 				d:SetDamageType(DMG_BLAST)
+				d:SetDamageForce(Vector(0,0,100000))
 				for k,v in pairs(player.GetAll()) do
 					if v:Alive() then
 						local x3,y3 = v:GetGridCoordinate()
@@ -104,4 +106,4 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_melonbomb", Color(0,255,0), SWEP.AttachModel, 2)
+GAMEMODE:AddWeaponPickup("proto_melonbomb", 70, Color(0,255,0), SWEP.AttachModel, 2)

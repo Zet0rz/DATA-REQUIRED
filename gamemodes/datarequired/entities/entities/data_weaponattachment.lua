@@ -3,9 +3,9 @@ AddCSLuaFile()
 
 DEFINE_BASECLASS( "base_anim" )
 
-ENT.PrintName		= "The head of the Laser Sniper projectile"
+ENT.PrintName		= "Virtual Weapon"
 ENT.Author			= "Zet0r"
-ENT.Information		= "The main objective"
+ENT.Information		= "The virtual weapon equipped from weapon drops"
 
 --ENT.Base			= "prop_physics"
 

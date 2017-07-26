@@ -13,24 +13,32 @@ ENT.AdminOnly		= false
 ENT.RenderGroup		= RENDERGROUP_BOTH
 
 local model = "models/props_phx/cannonball.mdl"
-local scale = 0.05
+local scale = 20
 
 function ENT:Initialize()
 	self:SetModel(model)
 	self:DrawShadow(false)
+	self:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+	self.ShooterSafeTime = CurTime() + 0.1
 	
 	--self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 	
 	if SERVER then
 		if not self.Size then self:RebuildPhysics(nil) end
 		self:SetSpeed()
+		self:SetTrigger(true)
+		
+		self.NoBulletHit = true
 	end
 end
 
-function ENT:RebuildPhysics( value )	
-	local size = value or 2
-	self:PhysicsInitSphere( size, "default_silent" )
-	self:SetCollisionBounds( Vector( -size, -size, -size ), Vector( size, size, size ) )
+function ENT:RebuildPhysics(value)
+	local size = value or 1
+	
+	--self:PhysicsInitSphere(size2, "default_silent")
+	--self:SetCollisionBounds(Vector(-size2, -size2, -size2), Vector(size2, size2, size2))
+	self:SetModelScale(size)
+	self:Activate()
 
 	local phys = self:GetPhysicsObject()
 	if IsValid(phys) then
@@ -41,8 +49,18 @@ function ENT:RebuildPhysics( value )
 		phys:Wake()
 	end
 	
-	self:SetModelScale(scale*size)
+	self:SetBulletSize(size)
 	self.Size = size
+	self:SetTrigger(true)
+	--debugoverlay.Sphere(self:GetPos(), size2)
+end
+
+function ENT:SetupDataTables()
+	self:NetworkVar("Float", 0, "BulletSize")
+end
+
+function ENT:SetCollideFunction(func)
+	self.CollideFunc = func
 end
 
 function ENT:SetSize(size)
@@ -64,8 +82,26 @@ function ENT:SetSpeedVector(vel)
 end
 
 if CLIENT then
+	local mat = Material("SGM/playercircle")
 	function ENT:Draw()
-		self:DrawModel()
+		--[[if not self.BulletScale or self.BulletScale ~= self:GetBulletSize() then
+			local size = self:GetBulletSize()
+			local vs = Vector(size*scale, size*scale, size*scale)
+			local m = Matrix()
+			m:Scale(vs)
+			self:EnableMatrix("RenderMultiply", m)
+			self.BulletScale = size
+			print("Scaled to", size)
+		end]]
+		--self:DrawModel()
+		
+		local pos = self:GetPos()
+		render.SetMaterial(mat)
+		local size = self:GetBulletSize()*scale
+		--render.DrawSprite(pos, size, size, Color(100,100,100))
+		
+		local s = self:GetBulletSize()/2
+		--render.DrawBox(pos, Angle(0,0,0), Vector(-s,-s,-s), Vector(s,s,s), Color(255,255,255), false)
 	end
 else
 	function ENT:Think()
@@ -77,14 +113,21 @@ function ENT:OnRemove()
 	
 end
 
-function ENT:PhysicsCollide(data, physobj)
-	local ent = data.HitEntity
-	if IsValid(ent) then
-		self.Damage:SetDamagePosition(data.HitPos)
-		self.Damage:SetDamageForce(data.OurOldVelocity)
+function ENT:StartTouch(ent)
+	if ent:CreatedByMap() or (not ent.NoBulletHit and (ent != self.Attacker or CurTime() > self.ShooterSafeTime)) then
+		print("touched", ent)
+		self.Damage:SetDamagePosition(self:GetPos())
+		self.Damage:SetDamageForce(self:GetVelocity())
 		ent:TakeDamageInfo(self.Damage)
+		
+		if self.CollideFunc then self.CollideFunc(self, ent) end
+		
+		self:Remove()
 	end
-	self.TOKILL = true
+end
+
+function ENT:SetAttacker(ent)
+	self.Attacker = ent
 end
 
 function ENT:UpdateTransmitState()

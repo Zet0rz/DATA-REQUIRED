@@ -1,0 +1,12 @@
+{
+	"title"		:	"[DATA REQUIRED]",
+	"type"		:	"gamemode",
+	"tags"		:	[ "fun", "cartoon" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vcproj",
+		"*.svn*",
+		"*.git*"
+	]
+}

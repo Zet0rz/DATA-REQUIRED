@@ -1,16 +1,33 @@
 
-weppickups = weppickups or {}
+GM.WeaponPickups = GM.WeaponPickups or {}
 
-function GM:AddWeaponPickup(class, color, model, scale)
-	weppickups[class] = {color = color, model = model, scale = scale}
+function GM:AddWeaponPickup(class, weight, color, model, scale, offset, angle)
+	self.WeaponPickups[class] = {color = color, weight = weight, model = model, scale = scale, offset = offset, angle = angle}
 end
 
 function GM:GetWeaponPickup(class)
-	return weppickups[class]
+	return self.WeaponPickups[class]
 end
 
 function GM:PickRandomPickupClass()
-	local tbl = table.GetKeys(weppickups)
+	local total = 0
+	for k,v in pairs(self.WeaponPickups) do
+		total = total + (v.weight or 100)
+	end
+	
+	if total > 0 then
+		local ran = math.random(total)
+		local counter = 0
+		for k,v in pairs(self.WeaponPickups) do
+			counter = counter + (v.weight or 100)
+			if counter >= ran then
+				return k
+			end
+		end
+	end
+	
+	-- Fallback if nothing else is returned (should never happen anyway)
+	local tbl = table.GetKeys(self.WeaponPickups)
 	return tbl[math.random(#tbl)]
 end
 
@@ -56,3 +73,21 @@ function GM:SpawnWeaponPickupPos(class, x, y)
 	if self.WeaponGrid[str] == false then self.WeaponGrid[str] = true end
 	wep.GridString = str
 end
+
+local spawndelay = CreateConVar("dreq_weaponfrequency", 5, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_ARCHIVE}, "Sets how big a delay between weapon drop spawns")
+local nextspawn = 0
+function GM:Think()
+	local ct = CurTime()
+	if self.RoundOngoing and nextspawn < ct then
+		self:SpawnWeaponPickup(self:PickRandomPickupClass())
+		nextspawn = ct + spawndelay:GetInt()
+	end
+end
+cvars.AddChangeCallback("dreq_weaponfrequency", function(convar, old, new)
+	local num = tonumber(new)
+	if num then
+		nextspawn = CurTime() + num
+	else
+		nextspawn = 0
+	end
+end)

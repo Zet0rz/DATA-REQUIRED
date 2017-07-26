@@ -20,20 +20,30 @@ function ENT:Initialize()
 		self:PhysicsInitSphere(64, "default_silent")
 		self:SetTrigger(true)
 		self:SetNotSolid(true)
+		
+		local mdl = ents.Create("data_weaponattachment")
+		mdl:SetPos(self:GetPos())
+		mdl:Spawn()
+		mdl:SetParent(self)
+		self:SetModelEntity(mdl)
 	end
 end
 
 function ENT:SetupDataTables()
 	self:NetworkVar("String", 1, "Weapon")
+	self:NetworkVar("Entity", 1, "ModelEntity")
 end
 
 function ENT:SetWeaponPickup(class)
 	self:SetWeapon(class)
 	local tbl = GAMEMODE:GetWeaponPickup(class)
 	if tbl then
-		PrintTable(tbl)
-		self:SetModel(tbl.model)
-		self:SetModelScale(tbl.scale)
+		--PrintTable(tbl)
+		local mdl = self:GetModelEntity()
+		mdl:SetModel(tbl.model)
+		mdl:SetModelScale(tbl.scale)
+		if tbl.angle then mdl:SetLocalAngles(tbl.angle) end
+		if tbl.offset then mdl:SetLocalPos(tbl.offset) end
 	end
 end
 
@@ -42,15 +52,18 @@ if CLIENT then
 	local mat = Material("SGM/playercircle")
 	local rotspeed = Angle(0,10,0)
 	function ENT:Draw()
-		local col = GAMEMODE:GetWeaponPickup(self:GetWeapon()).color
-		render.SetMaterial(mat)
-		render.DrawQuadEasy(self:GetPos(), Vector(0, 0, 1), 64, 64, col, 0)
-		
-		self:DrawModel()
-		
-		if !self:GetRenderAngles() then self:SetRenderAngles(self:GetAngles()) end
-		self:SetRenderAngles(self:GetRenderAngles()+(rotspeed*FrameTime()))
-		
+		local data = GAMEMODE:GetWeaponPickup(self:GetWeapon())
+		local col = data.color
+		local mdl = self:GetModelEntity()
+		if IsValid(mdl) then
+			render.SetMaterial(mat)
+			render.DrawQuadEasy(self:GetPos(), Vector(0, 0, 1), 64, 64, col, 0)
+			
+			mdl:DrawModel()
+			
+			--if !mdl:GetRenderAngles() then mdl:SetRenderAngles(mdl:GetAngles()) end
+			self:SetAngles(self:GetAngles()+(rotspeed*FrameTime()))
+		end
 	end
 end
 
@@ -68,4 +81,10 @@ end
 
 function ENT:UpdateTransmitState()
 	return TRANSMIT_ALWAYS
+end
+
+function ENT:OnRemove()
+	if SERVER and IsValid(self:GetModelEntity()) then
+		self:GetModelEntity():Remove()
+	end
 end

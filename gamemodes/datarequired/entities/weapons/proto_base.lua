@@ -12,6 +12,8 @@ if CLIENT then
 	SWEP.SlotPos			= 1
 	SWEP.DrawAmmo			= false
 	SWEP.DrawCrosshair		= true
+	
+	SWEP.Description		= "This shouldn't be here"
 
 end
 
@@ -38,13 +40,10 @@ SWEP.Secondary.DefaultClip	= -1
 SWEP.Secondary.Automatic	= false
 SWEP.Secondary.Ammo			= "none"
 
--- Data for weapon spawner
-SWEP.PickupModel			= ""
-SWEP.PickupColor			= Color(255,0,0)
-SWEP.PickupModelScale		= 1
-
 -- Data for attaching model to hand (custom weapon models basically)
 SWEP.AttachScale			= 1
+SWEP.AttachOffset 			= Vector(0,0,0)
+SWEP.AttachAngle 			= Angle(0,0,0)
 
 function SWEP:Initialize()
 	--self:CreateAttachedModel()
@@ -71,17 +70,23 @@ end
 
 function SWEP:Deploy()
 	self:CreateAttachedModel()
+	self:SetHoldType(self.HoldType)
 	if self.AttachModel then -- Optional, using weapon world model is preferred
 		local mdl = self.Owner.AttachedWeaponModel
 		if mdl then
 			mdl:SetNoDraw(false)
 			mdl:SetModel(self.AttachModel)
 			mdl:SetModelScale(self.AttachScale)
+			mdl:SetLocalPos(self.AttachOffset)
+			mdl:SetLocalAngles(self.AttachAngle)
+			self:SetNoDraw(true)
 		end
 		-- Merge with handbone
 	else
 		self.Owner.AttachedWeaponModel:SetNoDraw(true)
+		self:SetNoDraw(false)
 	end
+	if self.OnDeploy then self:OnDeploy() end
 end
 
 function SWEP:PrimaryAttack()
@@ -96,8 +101,12 @@ end
 function SWEP:Finish()
 	if IsValid(self.Owner.AttachedWeaponModel) then
 		self.Owner.AttachedWeaponModel:SetNoDraw(true)
-		self.Owner:StripWeapon(self:GetClass())
 	end
+	self.Owner:StripWeapon(self:GetClass())
+end
+
+function SWEP:OnFinished()
+
 end
 
 function SWEP:DrawHUD()
@@ -111,7 +120,28 @@ end
 
 function SWEP:OnRemove()
 	local mdl = self.Owner.AttachedWeaponModel
-	if mdl then
+	if IsValid(mdl) then
+		print("Nodrawn", self.Owner)
 		mdl:SetNoDraw(true)
+	end
+	self:OnFinished(self.Owner)
+end
+
+if SERVER then
+	util.AddNetworkString("data_weaponpos")
+	function SWEP:ReceiveVector(vec)
+		-- Empty by default
+	end
+	net.Receive("data_weaponpos", function(len,ply)
+		if IsValid(ply) then
+			local wep = ply:GetActiveWeapon()
+			if IsValid(wep) and wep.ReceiveVector then wep:ReceiveVector(net.ReadVector()) end
+		end
+	end)
+else
+	function SWEP:SendVector(vec)
+		net.Start("data_weaponpos")
+			net.WriteVector(vec)
+		net.SendToServer()
 	end
 end
