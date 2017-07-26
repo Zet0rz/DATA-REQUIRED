@@ -10,4 +10,7 @@ The gamemode is inspired by Tank Trouble and was made for the 2017 Gamemode Comp
 [Get it on the Workshop!](http://steamcommunity.com/sharedfiles/filedetails/?id=1090992453)
 _Available on completion_
 
+## Installation
+Drop everything in the folder into _/garrysmod/garrysmod/addons_
+
 ![](http://i.imgur.com/pd2x7gw.png)
