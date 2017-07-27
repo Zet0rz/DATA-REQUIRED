@@ -15,7 +15,8 @@ ENT.RenderGroup		= RENDERGROUP_BOTH
 local model = "models/Combine_Helicopter/helicopter_bomb01.mdl"
 local scale = 20
 
-ENT.MaxBounces = 1
+ENT.MaxBounces = 0 -- Don't bounce by default
+ENT.MaxLifetime = 0 -- Infinite lifetime by default (dies on max bounce)
 
 function ENT:SetupDataTables()
 	self:NetworkVar("Float", 0, "Size")
@@ -30,6 +31,7 @@ function ENT:Initialize()
 	self.ShooterSafeTime = CurTime() + 0.1
 	self.NoBulletHit = true
 	self.Bounces = 0
+	if self.MaxLifetime > 0 then self.Lifetime = CurTime() + self.MaxLifetime end
 end
 
 function ENT:RebuildPhysics()
@@ -73,7 +75,7 @@ if CLIENT then
 	end
 else
 	function ENT:Think()
-		if self.TOKILL then self:Remove() end
+		if self.TOKILL or (self.Lifetime and CurTime() > self.Lifetime) then self:Remove() end
 	end
 end
 

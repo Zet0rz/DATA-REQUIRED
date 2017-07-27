@@ -1,7 +1,7 @@
 local ply = FindMetaTable("Player")
 local ent = FindMetaTable("Entity")
 
-function ent:FireProjectile(size, pos, vel, d)
+function ent:FireProjectile(size, pos, vel, d, applyfunc)
 	local bul = ents.Create("data_projectile2")
 	bul:SetSize(size)
 	bul:SetPos(pos)
@@ -19,17 +19,20 @@ function ent:FireProjectile(size, pos, vel, d)
 	bul:SetDamage(d)
 	bul:SetAttacker(self)
 	
+	-- Let's you apply data to the bullet before it is spawned
+	if applyfunc then applyfunc(bul) end
+	
 	bul:Spawn()
 	bul:SetSpeedVector(vel)
 	
 	return bul
 end
 
-function ply:FireProjectileAim(size, speed, d)
+function ply:FireProjectileAim(size, speed, d, applyfunc)
 	local pos = self:GetShootPos() + self:GetAimVector()*25
 	local vel = speed*self:GetAimVector()
 	
-	return self:FireProjectile(size, pos, vel, d)
+	return self:FireProjectile(size, pos, vel, d, applyfunc)
 end
 
 -- Overwrite EmitSound so that it has the range to reach the camera

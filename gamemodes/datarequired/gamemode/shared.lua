@@ -1,4 +1,10 @@
 print("Shared Loads")
+
+GM.Name = "[DATA REQUIRED]"
+GM.Author = "Zet0r"
+GM.Email = "N/A"
+GM.Website = "https://youtube.com/Zet0r"
+
 --[[		THINGS TO DO		--
 	
 	✓ 	 = Done
@@ -8,7 +14,7 @@ print("Shared Loads")
 	/	 = Couldn't do
 	*	 = Partially done
 
-	Beta Ready:
+	Submission Ready:
 	✓	Top-down movement system
 	✓	Camera positioning system
 	✓	Weapon spawn systen
@@ -21,13 +27,15 @@ print("Shared Loads")
 	✓	Arena wall delays
 	✓	Player freeze during start (while arena builds)
 	✓	Weapon pickup angle and offsets
-	-	Screenshake alternative (so death screen is not so weird)
+	*	Screenshake alternative (so death screen is not so weird)
 	✓	Weapon changes (weighted random)
 	✓	Logo and menu icon, workshop logo
-	-	Bullet bounce on some weapons
+	✓	Bullet bounce on some weapons
 	-	F1 menu for map editing
 	-	More maps
-	-	More fast paced gameplay? (faster everything)
+	-	Weapon balancing
+	-	Killfeed
+	-	Actual round starting (without having to lua_run it)
 	
 	Weapon idea list:
 	#	Lua	Fx	Description
@@ -59,6 +67,8 @@ print("Shared Loads")
 	-	Playermodels and color from sandbox?
 	-	Color fade of arena?
 	-	Music intensity based on weaponry usage?
+	-	Faster gameplay? (aim for shorter rounds)
+	-	Ping effect to prevent hiding?
 	
 	Bugs:
 	-	Weapon models sometimes attaching to opposite hand? (On spawn changes hands, model change?)
@@ -66,6 +76,8 @@ print("Shared Loads")
 	-	Weapon attachments not disappearing on death
 	-	Laser killing yourself
 	-	Some weapon models are errors (Fragment, sniper, gatling, nuke shield)
+	-	Scoreboard doesn't get smalle on removal of player
+	-	Fragment bomb erroring if owner dies first (weapon no longer valid, PrimaryAttack)
 	
 ]]
 
@@ -81,7 +93,9 @@ function GM:SetupMove(ply, mv, cmd)
 end
 
 TEAM_TESTSUBJECTS = 1
+TEAM_DEAD = 2
 team.SetUp(TEAM_TESTSUBJECTS, "Test Subjects", Color(150,150,255))
+team.SetUp(TEAM_DEAD, "Test Subjects", Color(150,150,255)) -- Only meant to be used internally
 team.SetUp(TEAM_SPECTATOR, "Spectator", Color(100,100,100))
 
 hook.Add("ShouldCollide", "data_collide", function(ply, ent)
@@ -92,3 +106,7 @@ hook.Add("ShouldCollide", "data_collide", function(ply, ent)
 		end
 	end
 end)
+
+function GM:PlayerNoClip(ply, state)
+	return true
+end

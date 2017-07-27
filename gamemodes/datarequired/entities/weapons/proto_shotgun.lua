@@ -46,11 +46,12 @@ function SWEP:PrimaryAttack()
 		d:SetAttacker(self.Owner)
 		d:SetInflictor(self)
 		
-		self.Owner:FireProjectile(size, pos, vel, d)
-		self.Owner:FireProjectile(size, pos, vel2, d)
-		self.Owner:FireProjectile(size, pos, vel3, d)
-		self.Owner:FireProjectile(size, pos, vel4, d)
-		self.Owner:FireProjectile(size, pos, vel5, d)
+		local applyfunc = function(bul) bul.MaxBounces = 1 end
+		self.Owner:FireProjectile(size, pos, vel, d, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel2, d, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel3, d, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel4, d, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel5, d, applyfunc)
 		
 		self.Owner:EmitSound(shootsound)
 		self:Finish()

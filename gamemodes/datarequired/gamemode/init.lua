@@ -7,6 +7,7 @@ AddCSLuaFile( "weapon_pickups.lua" )
 AddCSLuaFile( "cl_hud.lua" )
 AddCSLuaFile( "scoring.lua" )
 AddCSLuaFile( "cl_scoreboard.lua" )
+AddCSLuaFile( "f1_menu.lua" )
 
 include( "shared.lua" )
 include( "player.lua" )
@@ -14,6 +15,7 @@ include( "testchamber.lua" )
 include( "weapon_pickups.lua" )
 include( "ent_extend.lua" )
 include( "scoring.lua" )
+include( "f1_menu.lua" )
 
 local playermodels = {
 	"models/player/group01/female_01.mdl",
@@ -105,7 +107,7 @@ function GM:PostPlayerDeath(ply)
 	end
 end
 function GM:PlayerDeath(victim, inflictor, attacker)
-	victim:SetTeam(TEAM_SPECTATOR)
+	victim:SetTeam(TEAM_DEAD)
 end
 function GM:PlayerDeathThink(ply)
 

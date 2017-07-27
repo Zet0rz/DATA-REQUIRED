@@ -222,7 +222,7 @@ local PLAYER_LINE = {
 		else
 			if ( self.Team == nil || self.Team != self.Player:Team() ) then
 				self.Team = self.Player:Team()
-				self.TeamStatus:SetText( "["..(self.Team == TEAM_TESTSUBJECTS and "TEAM_TESTSUBJECTS" or "TEAM_LOADING").."]")
+				self.TeamStatus:SetText( "["..((self.Team == TEAM_TESTSUBJECTS or self.Team == TEAM_DEAD) and "TEAM_TESTSUBJECTS" or "TEAM_LOADING").."]")
 			end
 			self:SetZPos((self.NumWins * -50) + self.NumDeaths + self.Player:EntIndex())
 		end

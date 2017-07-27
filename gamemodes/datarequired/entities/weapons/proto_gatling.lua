@@ -29,8 +29,9 @@ local speed = 800
 local size = 10
 local delay = 0.1
 local maxshots = 20
-local damage = 25
+local damage = 35
 local accuracy = 15 -- The angle of the spread
+local maxbounces = 2
 
 SWEP.Instructions	= "Hold LMB to fire bullets - Has a total of "..maxshots.." bullets"
 
@@ -44,8 +45,9 @@ function SWEP:PrimaryAttack()
 			local vel = speed*self.Owner:GetAimVector()
 			vel:Rotate(Angle(0,math.random(-accuracy, accuracy),0))
 			
-			self.Owner:FireProjectile(size, pos, vel, damage)
-			self:EmitSound(shootsound)
+			local applyfunc = function(bul) bul.MaxBounces = maxbounces end
+			self.Owner:FireProjectile(size, pos, vel, damage, applyfunc)
+			self.Owner:EmitSound(shootsound)
 			self.NextShot = ct + delay
 			if not self.NumShots then self.NumShots = 1
 			else

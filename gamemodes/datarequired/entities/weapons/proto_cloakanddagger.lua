@@ -24,7 +24,7 @@ local model = "models/weapons/w_crowbar.mdl"
 SWEP.WorldModel = model
 local time = 5
 local reach = 100
-local size = 5
+local size = 15
 local delay = 0.5
 
 local cloaksound = Sound("weapons/physcannon/physcannon_drop.wav")
@@ -49,7 +49,7 @@ function SWEP:PrimaryAttack()
 		self:EmitSound(swingsound)
 		if SERVER then
 			local spos = self.Owner:GetShootPos()
-			local ent = self.Owner:TraceHullAttack(spos, spos + self.Owner:GetAimVector()*reach, Vector(size,size,size), Vector(-size,-size,-size), 100, DMG_CLUB, 100, true)
+			local ent = self.Owner:TraceHullAttack(spos, spos + self.Owner:GetAimVector()*reach, Vector(-size,-size,-size), Vector(size,size,size), 100, DMG_CLUB, 100, false)
 			if IsValid(ent) and ent:IsPlayer() then
 				ent:EmitSound(hitsounds[math.random(#hitsounds)])
 			end

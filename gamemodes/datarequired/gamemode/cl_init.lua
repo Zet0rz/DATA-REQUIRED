@@ -6,6 +6,7 @@ include( "weapon_pickups.lua" )
 include("cl_hud.lua")
 include( "scoring.lua" )
 include( "cl_scoreboard.lua" )
+include( "f1_menu.lua" )
 
 local campos = Vector(0, 125, 1200)
 local angle_down = Angle(90,90,0)
@@ -20,7 +21,8 @@ local chamberedit = false
 hook.Add("CalcView", "dr_CalcView", function(ply, pos, angles, fov)	
 	--if IsValid(ply) then
 		local view = {}
-		view.origin = (chamberedit and campos or playcam) + (ply:GetShootPos()-pos)
+		view.origin = (chamberedit and campos or playcam)
+		if ply:Alive() then view.origin = view.origin + (pos-ply:GetShootPos()) end
 		view.angles = angle_down
 		view.fov = chamberedit and fov or playfov
 		view.drawviewer = true

@@ -1,5 +1,6 @@
 
 GM.WeaponPickups = GM.WeaponPickups or {}
+GM.DisabledWeapons = GM.DisabledWeapons or {}
 
 function GM:AddWeaponPickup(class, weight, color, model, scale, offset, angle)
 	self.WeaponPickups[class] = {color = color, weight = weight, model = model, scale = scale, offset = offset, angle = angle}
