@@ -53,7 +53,7 @@ function GM:CreateMove( cmd )
 			
 			cmd:SetButtons(but)
 			
-			if not gui.IsGameUIVisible() then
+			if not gui.IsGameUIVisible() and vgui.IsHoveringWorld() then
 				if input.WasMousePressed(MOUSE_LEFT) and editdelay < CurTime() then
 					local aim = chamberedit and gui.ScreenToVector(x,y) or util.AimVector(angle_down, playfov*3, x,y, ScrW(),ScrH())
 					

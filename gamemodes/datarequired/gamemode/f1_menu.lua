@@ -28,6 +28,39 @@ if SERVER then
 		end
 	end)
 	
+	util.AddNetworkString("data_editing")
+	net.Receive("data_editing", function(len, ply)
+		if ply:IsSuperAdmin() then
+			local target = net.ReadEntity()
+			if IsValid(target) then
+				target:EnableEditor(not target:GetEditing())
+				ply:ChatPrint(target:GetEditing() and target:Nick().." is not editing" or target:Nick().." is no longer editing")
+			end
+		end
+	end)
+	
+	util.AddNetworkString("data_mazesaveload")
+	net.Receive("data_mazesaveload", function(len, ply)
+		if ply:IsSuperAdmin() then
+			if net.ReadBool() then
+				local name = net.ReadString()
+				if name and name ~= "" then
+					--GAMEMODE:SaveMazeToFile(name, GAMEMODE.CurrentMap)
+					GAMEMODE:LoadMaze(name, GAMEMODE.CurrentMap)
+					net.Start("data_mazes")
+						net.WriteBool(false)
+						net.WriteTable(GAMEMODE.EnabledMazes)
+					net.Send(ply)
+				end
+			else
+				local name = net.ReadString()
+				if name and GAMEMODE.Mazes[name] then
+					GAMEMODE:LoadMap(name)
+				end
+			end
+		end
+	end)
+	
 else
 	local linecolor1 = Color(0,100,0)
 	local linecolor2 = Color(0,120,0)
@@ -118,7 +151,14 @@ else
 	-- Button
 	local DATA_BUTTON = {
 		Paint = function( self, w, h )
-			
+			surface.SetDrawColor(0,50,0,150)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end,
+		Init = function(self)
+			self:SetFont("DATAScoreboard2")
+			self:SetTextColor(textcolor)
 		end,
 	}
 	DATA_BUTTON = vgui.RegisterTable( DATA_BUTTON, "DButton" )
@@ -134,6 +174,7 @@ else
 	
 	local mazesheet
 	local mazepreview
+	local mazename
 	local framecolor = Color(0,0,0,200)
 	net.Receive("data_mazes", function()
 		if net.ReadBool() then
@@ -145,9 +186,10 @@ else
 				for k,v in pairs(mazesheet:GetChildren()) do
 					v:Remove()
 				end
+				local x,y = mazesheet:GetSize()
 				for k,v in pairs(tbl) do
 					local p = vgui.Create("DPanel")
-					p:SetSize(280,40)
+					p:SetSize(278,40)
 					p.Paint = function(self,w,h)
 						draw.RoundedBox(2,0,0,w,h,framecolor)
 						surface.SetDrawColor(0,255,0)
@@ -168,6 +210,7 @@ else
 							net.WriteBool(true)
 							net.WriteString(k)
 						net.SendToServer()
+						if IsValid(mazename) then mazename:SetText(k) end
 					end
 					
 					local chk = vgui.CreateFromTable(DATA_CHECKBOX, p)
@@ -177,6 +220,7 @@ else
 					
 					mazesheet:Add(p)
 				end
+				mazesheet:InvalidateLayout()
 			end
 		end
 	end)
@@ -188,7 +232,7 @@ else
 		net.SendToServer()
 	
 		local frame = vgui.Create("DFrame")
-		frame:SetTitle("F1 Menu - CHANGE ME")
+		frame:SetTitle("VR Environment Control Panel")
 		frame:SetSize(600,400)
 		frame:Center()
 		frame:SetDeleteOnClose(true)
@@ -236,7 +280,7 @@ else
 				pnl:Add(p)
 			end
 		end
-		sheet:AddSheet( "Weaponry", weaponry )
+		sheet:AddSheet( "Prototype Weaponry", weaponry )
 		
 		local panel2 = vgui.Create( "DPanel", sheet )
 		panel2.Paint = function( self, w, h ) draw.RoundedBox(2, 0, 0, w, h, oncolor) end
@@ -282,10 +326,99 @@ else
 		mazemap:SetSize(270,165)
 		mazemap:SetPos(5,5)
 		
+		mazename = vgui.Create("DTextEntry", mazeview)
+		mazename:SetSize(270, 35)
+		mazename:SetPos(5, 175)
+		mazename:SetFont("DATAScoreboard2")
+		mazename:SetText("[CURRENT MAZE]")
+		mazename.Paint = function(self,w,h)
+			surface.SetDrawColor(0,50,0,255)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0)
+			drawcorners(w,h,3,10,true,true,true,true)
+			self:DrawTextEntryText(textcolor, oncolor, offcolor)
+		end
+		
+		local update = vgui.CreateFromTable(DATA_BUTTON, mazeview)
+		update:SetSize(130,35)
+		update:SetText("Update Preview")
+		update:SetPos(145, 215)
+		update:SetTooltip("Updates the preview to the current maze")
+		update.DoClick = function(self)
+			net.Start("data_mazes")
+				net.WriteBool(true)
+				net.WriteString("current")
+			net.SendToServer()
+			if IsValid(mazename) then
+				mazename:SetText("[CURRENT MAZE]")
+			end
+		end
+		
+		local load = vgui.CreateFromTable(DATA_BUTTON, mazeview)
+		load:SetSize(135,35)
+		load:SetText("Build Selected")
+		load:SetPos(5, 215)
+		load:SetTooltip("Builds the currently selected maze into the arena")
+		load.DoClick = function(self)
+			net.Start("data_mazesaveload")
+				net.WriteBool(false)
+				net.WriteString(mazename:GetText())
+			net.SendToServer()
+		end
+		
+		local dropdown = vgui.Create("DComboBox", mazeview)
+		dropdown:SetSize(135, 30)
+		dropdown:SetPos(5,255)
+		dropdown:SetFont("DATAScoreboard2")
+		dropdown:SetTextColor(textcolor)
+		dropdown:AddChoice(LocalPlayer():Nick(), LocalPlayer(), true)
+		for k,v in pairs(player.GetAll()) do
+			if v ~= LocalPlayer() then
+				dropdown:AddChoice(v:Nick(), v, false)
+			end
+		end
+		dropdown.Paint = function(self,w,h)
+			surface.SetDrawColor(0,50,0,150)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0)
+			drawcorners(w,h,3,10,true,true,true,true)
+		end
+		
+		local edit = vgui.CreateFromTable(DATA_BUTTON, mazeview)
+		edit:SetSize(130,30)
+		edit:SetText("Toggle Editing")
+		edit:SetPos(145, 255)
+		edit:SetTooltip("Toggles maze editing on the selected player")
+		edit.DoClick = function(self)
+			local name, ply = dropdown:GetSelected()
+			net.Start("data_editing")
+				net.WriteEntity(ply)
+			net.SendToServer()
+		end
+		
+		local save = vgui.CreateFromTable(DATA_BUTTON, mazeview)
+		save:SetSize(270,35)
+		save:SetText("Save to File")
+		save:SetPos(5, 290)
+		save:SetTooltip("Saves the maze to .txt file and loads it into the game")
+		save.DoClick = function(self)
+			net.Start("data_mazesaveload")
+				net.WriteBool(true)
+				net.WriteString(mazename:GetText())
+			net.SendToServer()
+		end
+		save.Paint = function(self,w,h)
+			surface.SetDrawColor(0,50,0,255)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end
+		
 		local scroll = vgui.Create("DScrollPanel", panel2)
-		scroll:Dock(LEFT)
+		scroll:Dock(FILL)
 		mazesheet = vgui.Create("DIconLayout", scroll)
 		mazesheet:Dock(FILL)
+		mazesheet:SetSpaceY(5)
 		net.Start("data_mazes")
 			net.WriteBool(false)
 		net.SendToServer()
