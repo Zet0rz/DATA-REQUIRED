@@ -1,34 +1,60 @@
 
 GM.WeaponPickups = GM.WeaponPickups or {}
-GM.DisabledWeapons = GM.DisabledWeapons or {}
+GM.EnabledWeapons = GM.EnabledWeapons or {}
 
 function GM:AddWeaponPickup(class, weight, color, model, scale, offset, angle)
-	self.WeaponPickups[class] = {color = color, weight = weight, model = model, scale = scale, offset = offset, angle = angle}
+	self.WeaponPickups[class] = {color = color, defaultweight = weight, model = model, scale = scale, offset = offset, angle = angle}
+	self.EnabledWeapons[class] = weight
 end
 
 function GM:GetWeaponPickup(class)
 	return self.WeaponPickups[class]
 end
 
+function GM:EnableWeapon(class)
+	if self.WeaponPickups[class] then
+		self.EnabledWeapons[class] = self.WeaponPickups[class].defaultweight or 100
+	end
+end
+
+function GM:DisableWeapon(class)
+	if self.WeaponPickups[class] then
+		self.EnabledWeapons[class] = false
+	end
+end
+
+function GM:SetWeaponWeight(class, weight)
+	if self.WeaponPickups[class] then
+		self.EnabledWeapons[class] = weight
+	end
+end
+
 function GM:PickRandomPickupClass()
 	local total = 0
-	for k,v in pairs(self.WeaponPickups) do
-		total = total + (v.weight or 100)
+	for k,v in pairs(self.EnabledWeapons) do
+		if v then
+			total = total + v
+		end
 	end
 	
 	if total > 0 then
 		local ran = math.random(total)
 		local counter = 0
-		for k,v in pairs(self.WeaponPickups) do
-			counter = counter + (v.weight or 100)
-			if counter >= ran then
-				return k
+		for k,v in pairs(self.EnabledWeapons) do
+			if v then
+				counter = counter + v
+				if counter >= ran then
+					return k
+				end
 			end
 		end
 	end
 	
 	-- Fallback if nothing else is returned (should never happen anyway)
-	local tbl = table.GetKeys(self.WeaponPickups)
+	local tbl = {}
+	for k,v in pairs(self.EnabledWeapons) do
+		if v then table.insert(tbl, k) end
+	end
 	return tbl[math.random(#tbl)]
 end
 
@@ -75,7 +101,7 @@ function GM:SpawnWeaponPickupPos(class, x, y)
 	wep.GridString = str
 end
 
-local spawndelay = CreateConVar("dreq_weaponfrequency", 5, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_ARCHIVE}, "Sets how big a delay between weapon drop spawns")
+local spawndelay = CreateConVar("dreq_weaponfrequency", 3, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_ARCHIVE}, "Sets how big a delay between weapon drop spawns")
 local nextspawn = 0
 function GM:Think()
 	local ct = CurTime()

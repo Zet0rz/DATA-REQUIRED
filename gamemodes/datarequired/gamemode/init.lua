@@ -66,14 +66,48 @@ local playercolors = {
 local campos = Vector(0, 125, 1200)
 util.AddNetworkString("dr_campos")
 
+function GM:InitPostEntity()
+	if Entity(0).RoundIdle == nil then Entity(0).RoundIdle = true end
+end
+
 function GM:PlayerInitialSpawn(ply)
-	if #player.GetAll() <= 2 then
-		--self:BeginRound()
+	print("Spawned", ply)
+	if #player.GetAll() >= 2 and Entity(0).RoundIdle then
+		PrintMessage(HUD_PRINTTALK, "Test subject ["..ply:Nick().."] initiated. Testing will initiate in 5 seconds ...")
+		timer.Simple(5, function()
+			self:ResetTests()
+			self:BeginRound()
+		end)
+		Entity(0).RoundIdle = false
 	end
 	
 	net.Start("dr_campos")
 		net.WriteVector(campos)
 	net.Send(ply)
+end
+
+function GM:EntityRemoved(ent)
+	if ent:IsPlayer() then
+		if #player.GetAll() < 2 and not Entity(0).RoundIdle then
+			PrintMessage(HUD_PRINTTALK, "Test subject ["..ent:Nick().."] terminated testing protocol. Test Environment entering Training Mode ...")
+			
+			
+			net.Start("data_testcomplete")
+				net.WriteUInt(self.RoundNumber, 8)
+				local winner = team.GetPlayers(TEAM_TESTSUBJECTS)[1]
+				if IsValid(winner) then
+					winner:AddFrags(1)
+					net.WriteBool(true)
+					net.WriteEntity(winner)
+					net.WriteBool(true)
+				else
+					net.WriteBool(false)
+					net.WriteBool(true)
+				end
+			net.Broadcast()
+			Entity(0).RoundIdle = true
+		end
+	end
 end
 
 local runspeed = 250

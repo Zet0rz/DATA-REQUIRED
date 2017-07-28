@@ -31,11 +31,11 @@ GM.Website = "https://youtube.com/Zet0r"
 	✓	Weapon changes (weighted random)
 	✓	Logo and menu icon, workshop logo
 	✓	Bullet bounce on some weapons
-	-	F1 menu for map editing
+	✓	F1 menu for map editing
 	-	More maps
 	-	Weapon balancing
 	-	Killfeed
-	-	Actual round starting (without having to lua_run it)
+	✓	Actual round starting (without having to lua_run it)
 	
 	Weapon idea list:
 	#	Lua	Fx	Description

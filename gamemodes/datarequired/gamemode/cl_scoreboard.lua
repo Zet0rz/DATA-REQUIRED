@@ -35,6 +35,24 @@ surface.CreateFont("DATAScoreboard2", {
 	outline = false,
 })
 
+surface.CreateFont("DATAScoreboard2.5", {
+	font = "Arial",
+	extended = false,
+	size = 16,
+	weight = 500,
+	blursize = 0,
+	scanlines = 3,
+	antialias = true,
+	underline = false,
+	italic = false,
+	strikeout = false,
+	symbol = false,
+	rotary = false,
+	shadow = false,
+	additive = false,
+	outline = false,
+})
+
 surface.CreateFont("DATAScoreboard3", {
 	font = "Arial",
 	extended = false,

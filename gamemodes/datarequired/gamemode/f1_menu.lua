@@ -2,10 +2,14 @@ if SERVER then
 	util.AddNetworkString("data_f1")
 	
 	function GM:ShowHelp(ply)
-		if ply:IsSuperAdmin() then
-			net.Start("data_f1")
-			net.Send(ply)
+		-- Load in weapon data
+		local tbl = {}
+		for k,v in pairs(self.EnabledWeapons) do
+			if v then tbl[k] = true else tbl[k] = false end
 		end
+		net.Start("data_f1")
+			net.WriteTable(tbl)
+		net.Send(ply)
 	end
 	
 	util.AddNetworkString("data_mazes")
@@ -61,11 +65,29 @@ if SERVER then
 		end
 	end)
 	
+	util.AddNetworkString("data_enabledisable")
+	net.Receive("data_enabledisable", function(len, ply)
+		if ply:IsSuperAdmin() then
+			if net.ReadBool() then -- Mazes
+				local name = net.ReadString()
+				if name and GAMEMODE.Mazes[name] then
+					GAMEMODE.EnabledMazes[name] = net.ReadBool()
+				end
+			else -- Weapons
+				local class = net.ReadString()
+				if class and GAMEMODE.WeaponPickups[class] then
+					if net.ReadBool() then GAMEMODE:EnableWeapon(class) else GAMEMODE:DisableWeapon(class) end
+				end
+			end
+		end
+	end)
+	
 else
 	local linecolor1 = Color(0,100,0)
 	local linecolor2 = Color(0,120,0)
 
 	local textcolor = Color(150,255,150)
+	local lockedtext = Color(20,150,20)
 	local outlinecolor = Color(0,50,0,200)
 
 	local textcolor2 = Color(200,255,200)
@@ -162,15 +184,72 @@ else
 		end,
 	}
 	DATA_BUTTON = vgui.RegisterTable( DATA_BUTTON, "DButton" )
+	
+	-- Panel Frame
+	local DATA_PANEL = {
+		Paint = function( self, w, h )
+			surface.SetDrawColor(0,50,0,150)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end
+	}
+	DATA_PANEL = vgui.RegisterTable( DATA_PANEL, "DPanel" )
 
 	-- Checkbox
 	local DATA_CHECKBOX = {
-		Paint = function( self, w, h )
+		Paint = function(self, w, h)
 			local str = self:GetChecked() and "[X]" or "[  ]"
-			draw.SimpleTextOutlined(str, "DATAScoreboard2", w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+			draw.SimpleTextOutlined(str, "DATAScoreboard2", w/2, h/2, self:IsEnabled() and textcolor or lockedtext, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
 		end,
 	}
 	DATA_CHECKBOX = vgui.RegisterTable( DATA_CHECKBOX, "DCheckBox" )
+	
+	-- Button
+	local DATA_SCROLL = {
+		Init = function(self)
+			local bar = self:GetVBar()
+			bar:SetVisible(true)
+			bar.Paint = function(self,w,h)
+				surface.SetDrawColor(0,50,0,150)
+				surface.DrawRect(0,0,w,h)
+				surface.SetDrawColor(0,255,0,255)
+				drawcorners(w,h,2,5,true,true,true,true)
+			end
+			bar.btnUp.Paint = function(self,w,h)
+				surface.SetDrawColor(0,50,0,255)
+				surface.DrawRect(0,0,w,h)
+				surface.SetDrawColor(0,255,0,255)
+				drawcorners(w,h,2,5,true,true,true,true)
+				draw.SimpleTextOutlined("^", "DATAScoreboard3", w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+			end
+			bar.btnDown.Paint = function(self,w,h)
+				surface.SetDrawColor(0,50,0,255)
+				surface.DrawRect(0,0,w,h)
+				surface.SetDrawColor(0,255,0,255)
+				drawcorners(w,h,2,5,true,true,true,true)
+				draw.SimpleTextOutlined("v", "DATAScoreboard3", w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+			end
+			bar.btnGrip.Paint = function(self,w,h)
+				surface.SetDrawColor(0,50,0,255)
+				surface.DrawRect(0,0,w,h)
+				surface.SetDrawColor(0,255,0,255)
+				
+				surface.DrawRect(0,0,w,2)
+				surface.DrawRect(0,2,2,h-2)
+				surface.DrawRect(w-2,2,2,h-2)
+				surface.DrawRect(2,h-2,w-4,2)
+			end
+		end,
+		Rebuild = function(self)
+			self:GetCanvas():SizeToChildren(false, true )
+			-- Although this behaviour isn't exactly implied, center vertically too
+			if (self.m_bNoSizing && self:GetCanvas():GetTall() < self:GetTall()) then
+				self:GetCanvas():SetPos(0, (self:GetTall() - self:GetCanvas():GetTall()) * 0.5)
+			end
+		end,
+	}
+	DATA_SCROLL = vgui.RegisterTable( DATA_SCROLL, "DScrollPanel" )
 	
 	local mazesheet
 	local mazepreview
@@ -182,6 +261,8 @@ else
 			mazepreview = tbl
 		else
 			local tbl = net.ReadTable()
+			local admin = LocalPlayer():IsSuperAdmin()
+			
 			if IsValid(mazesheet) then
 				for k,v in pairs(mazesheet:GetChildren()) do
 					v:Remove()
@@ -217,15 +298,29 @@ else
 					chk:SetPos(240,4)
 					chk:SetSize(30,30)
 					chk:SetChecked(v)
+					chk:SetEnabled(admin)
+					chk.OnChange = function(self, bool)
+						net.Start("data_enabledisable")
+							net.WriteBool(true) -- mazes
+							net.WriteString(k)
+							net.WriteBool(bool)
+						net.SendToServer()
+					end
 					
 					mazesheet:Add(p)
 				end
-				mazesheet:InvalidateLayout()
+				-- Doesn't work? :/
+				mazesheet:GetParent():PerformLayout()
 			end
 		end
 	end)
 
+	local weaponmat = Material("SGM/playercircle")
+	local rotspeed = Angle(0,10,0)
 	local function OpenF1Menu()
+		local weapondata = net.ReadTable()
+		local admin = LocalPlayer():IsSuperAdmin()
+	
 		net.Start("data_mazes")
 			net.WriteBool(true)
 			net.WriteString("current")
@@ -247,19 +342,117 @@ else
 		local sheet = vgui.CreateFromTable(DATA_SHEET, frame)
 		sheet:Dock(FILL)
 		
-		local weaponry = vgui.Create( "DScrollPanel", sheet )
-		weaponry.Paint = function( self, w, h )
-			draw.RoundedBox(2, 0, 0, w, h, oncolor)
+		local weaponpanel = vgui.Create( "DPanel", sheet )
+		weaponpanel.Paint = function( self, w, h ) draw.RoundedBox(2, 0, 0, w, h, oncolor) end
+		local weaponinfo = vgui.Create("DPanel", weaponpanel)
+		weaponinfo.Paint = function(self,w,h)
+			draw.RoundedBox(2, 0, 0, w, h, offcolor)
 		end
-		local pnl = vgui.Create("DIconLayout", weaponry)
-		pnl:Dock(FILL)
-		pnl:SetSpaceX(5)
-		pnl:SetSpaceY(5)
-		for k,v in pairs(GAMEMODE.WeaponPickups) do
+		weaponinfo:SetSize(280,350)
+		weaponinfo:Dock(RIGHT)
+		local weaponmodel = vgui.Create("DPanel", weaponinfo)
+		local modelpanel = vgui.Create("DModelPanel", weaponmodel)
+		modelpanel:Dock(FILL)
+		modelpanel:SetCamPos(Vector(0,0,125))
+		modelpanel:SetLookAng(Angle(90,0,0))
+		
+		function modelpanel:LayoutEntity(Entity)
+			Entity:SetAngles(Entity:GetAngles()+(rotspeed*FrameTime()))
+			if Entity.OffsetPos then
+				Entity.OffsetPos:Rotate(rotspeed*FrameTime())
+				Entity:SetPos(Entity.OffsetPos)
+			end
+		end
+		
+		weaponmodel.Paint = function(self,w,h)
+			surface.SetDrawColor(0,20,0)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0)
+			drawcorners(w,h,4,30,true,true,true,true)
+			if self.Weapon and GAMEMODE.WeaponPickups[self.Weapon] then
+				local data = GAMEMODE:GetWeaponPickup(self.Weapon)
+				surface.SetMaterial(weaponmat)
+				local col = data.color
+				surface.SetDrawColor(col.r,col.g,col.b)
+				local radius = 65
+				surface.DrawTexturedRect(w/2-radius,h/2-radius,radius*2,radius*2)
+			end
+		end
+		weaponmodel:SetSize(270,165)
+		weaponmodel:SetPos(5,5)
+		function weaponmodel:LoadWeapon(class)
+			if class and GAMEMODE.WeaponPickups[class] then
+				self.Weapon = class
+				local data = GAMEMODE:GetWeaponPickup(self.Weapon)
+				modelpanel:SetModel(data.model)
+				local ent = modelpanel:GetEntity()
+				ent:SetPos(Vector(0,0,0))
+				if data.offset then ent.OffsetPos = Vector(data.offset.x, data.offset.y, data.offset.z) else ent.OffsetPos = nil end
+				if data.angle then ent:SetAngles(data.angle) else ent:SetAngles(Angle(0,0,0)) end
+				if data.scale then ent:SetModelScale(data.scale) else ent:SetModelScale(1) end
+			end
+		end
+		
+		local weaponnameholder = vgui.CreateFromTable(DATA_PANEL, weaponinfo)
+		weaponnameholder:SetSize(270, 35)
+		weaponnameholder:SetPos(5, 175)
+		weaponnameholder:DockPadding(5,5,5,5)
+		weaponnameholder.Paint = function( self, w, h )
+			surface.SetDrawColor(0,20,0,255)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end
+		local weaponname = vgui.Create("DLabel", weaponnameholder)
+		weaponname:SetFont("DATAScoreboard2")
+		weaponname:SetText("No Weapon Selected")
+		weaponname:Dock(FILL)
+		
+		local weapondescholder = vgui.CreateFromTable(DATA_PANEL, weaponinfo)
+		weapondescholder:SetSize(270, 60)
+		weapondescholder:SetPos(5, 215)
+		weapondescholder:DockPadding(5,5,5,5)
+		weapondescholder.Paint = function( self, w, h )
+			surface.SetDrawColor(0,50,0,255)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end
+		local weapondesc = vgui.Create("DLabel", weapondescholder)
+		weapondesc:SetFont("DATAScoreboard2.5")
+		weapondesc:SetText("Select a weapon from the list to view data.")
+		weapondesc:SetWrap(true)
+		weapondesc:SetContentAlignment(7)
+		weapondesc:Dock(FILL)
+		
+		local weaponinstrholder = vgui.CreateFromTable(DATA_PANEL, weaponinfo)
+		weaponinstrholder:SetSize(270, 45)
+		weaponinstrholder:SetPos(5, 280)
+		weaponinstrholder:DockPadding(5,5,5,5)
+		weaponinstrholder.Paint = function( self, w, h )
+			surface.SetDrawColor(0,50,0,255)
+			surface.DrawRect(0,0,w,h)
+			surface.SetDrawColor(0,255,0,255)
+			drawcorners(w,h,3,10, true, true, true, true)
+		end
+		local weaponinstr = vgui.Create("DLabel", weaponinstrholder)
+		weaponinstr:SetFont("DATAScoreboard3")
+		weaponinstr:SetText("These fields will contain information about the selected weapon prototype.")
+		weaponinstr:SetWrap(true)
+		weaponinstr:SetContentAlignment(7)
+		weaponinstr:Dock(FILL)
+		
+		local weaponlist = vgui.CreateFromTable(DATA_SCROLL, weaponpanel)
+		weaponlist:Dock(FILL)
+		local weaponlayout = vgui.Create("DIconLayout", weaponlist)
+		weaponlayout:Dock(FILL)
+		weaponlayout:SetSpaceX(5)
+		weaponlayout:SetSpaceY(5)
+		for k,v in pairs(weapondata) do
 			local wep = weapons.Get(k)
 			if wep then
 				local p = vgui.Create("DPanel")
-				p:SetSize(280,40)
+				p:SetSize(278,40)
 				p.Paint = function(self,w,h)
 					draw.RoundedBox(2,0,0,w,h,framecolor)
 					surface.SetDrawColor(0,255,0)
@@ -271,16 +464,35 @@ else
 				txt:SetPos(10,10)
 				txt:SizeToContents()
 				
+				local but = vgui.Create("DButton", p)
+				but.Paint = function() end
+				but:SetText("")
+				but:SetSize(280,40)
+				but.DoClick = function(self)
+					weaponname:SetText(wep.PrintName)
+					weapondesc:SetText(wep.Purpose)
+					weaponinstr:SetText(wep.Instructions)
+					weaponmodel:LoadWeapon(k)
+				end
+				
 				local chk = vgui.CreateFromTable(DATA_CHECKBOX, p)
 				--local chk = vgui.Create("DCheckBox",p)
 				chk:SetPos(240,4)
 				chk:SetSize(30,30)
-				chk:SetChecked(true)
+				chk:SetChecked(v)
+				chk:SetEnabled(admin)
+				chk.OnChange = function(self, bool)
+					net.Start("data_enabledisable")
+						net.WriteBool(false) -- weapons
+						net.WriteString(k)
+						net.WriteBool(bool)
+					net.SendToServer()
+				end
 				
-				pnl:Add(p)
+				weaponlayout:Add(p)
 			end
 		end
-		sheet:AddSheet( "Prototype Weaponry", weaponry )
+		sheet:AddSheet( "Prototype Weaponry", weaponpanel )
 		
 		local panel2 = vgui.Create( "DPanel", sheet )
 		panel2.Paint = function( self, w, h ) draw.RoundedBox(2, 0, 0, w, h, oncolor) end
@@ -331,6 +543,7 @@ else
 		mazename:SetPos(5, 175)
 		mazename:SetFont("DATAScoreboard2")
 		mazename:SetText("[CURRENT MAZE]")
+		mazename:SetEditable(admin)
 		mazename.Paint = function(self,w,h)
 			surface.SetDrawColor(0,50,0,255)
 			surface.DrawRect(0,0,w,h)
@@ -344,6 +557,7 @@ else
 		update:SetText("Update Preview")
 		update:SetPos(145, 215)
 		update:SetTooltip("Updates the preview to the current maze")
+		update:SetEnabled(admin)
 		update.DoClick = function(self)
 			net.Start("data_mazes")
 				net.WriteBool(true)
@@ -359,6 +573,7 @@ else
 		load:SetText("Build Selected")
 		load:SetPos(5, 215)
 		load:SetTooltip("Builds the currently selected maze into the arena")
+		load:SetEnabled(admin)
 		load.DoClick = function(self)
 			net.Start("data_mazesaveload")
 				net.WriteBool(false)
@@ -389,6 +604,7 @@ else
 		edit:SetText("Toggle Editing")
 		edit:SetPos(145, 255)
 		edit:SetTooltip("Toggles maze editing on the selected player")
+		edit:SetEnabled(admin)
 		edit.DoClick = function(self)
 			local name, ply = dropdown:GetSelected()
 			net.Start("data_editing")
@@ -401,6 +617,7 @@ else
 		save:SetText("Save to File")
 		save:SetPos(5, 290)
 		save:SetTooltip("Saves the maze to .txt file and loads it into the game")
+		save:SetEnabled(admin)
 		save.DoClick = function(self)
 			net.Start("data_mazesaveload")
 				net.WriteBool(true)
@@ -414,7 +631,20 @@ else
 			drawcorners(w,h,3,10, true, true, true, true)
 		end
 		
-		local scroll = vgui.Create("DScrollPanel", panel2)
+		if not admin then
+			local adminblock = vgui.Create("DPanel", mazeview)
+			adminblock:SetPos(5, 175)
+			adminblock:SetSize(270,150)
+			adminblock.Paint = function(self,w,h)
+				surface.SetDrawColor(0,0,0,250)
+				surface.DrawRect(0,0,w,h)
+				surface.SetDrawColor(0,255,0)
+				drawcorners(w,h,4,30,true,true,true,true)
+				draw.SimpleTextOutlined("[ADMIN REQUIRED]", "DATAScoreboard1", w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, outlinecolor)
+			end
+		end
+		
+		local scroll = vgui.CreateFromTable(DATA_SCROLL, panel2)
 		scroll:Dock(FILL)
 		mazesheet = vgui.Create("DIconLayout", scroll)
 		mazesheet:Dock(FILL)
@@ -423,7 +653,7 @@ else
 			net.WriteBool(false)
 		net.SendToServer()
 		
-		sheet:AddSheet( "Maze Environment", panel2 )
+		sheet:AddSheet("Maze Environment", panel2)
 	end
 	net.Receive("data_f1", OpenF1Menu)
 end
