@@ -117,4 +117,4 @@ if CLIENT then
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_sniper", 90, Color(200,255,100), SWEP.AttachModel, 0.75, Vector(0,-20,0))
+GAMEMODE:AddWeaponPickup("proto_sniper", 90, Color(200,255,100), SWEP.AttachModel, 0.65, Vector(-20,20,0), Angle(0,-135,0))

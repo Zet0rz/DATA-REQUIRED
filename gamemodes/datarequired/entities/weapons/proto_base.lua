@@ -47,6 +47,7 @@ SWEP.AttachAngle 			= Angle(0,0,0)
 
 function SWEP:Initialize()
 	--self:CreateAttachedModel()
+	self.WeaponClass = self:GetClass()
 end
 
 function SWEP:CreateAttachedModel()
@@ -66,11 +67,13 @@ function SWEP:CreateAttachedModel()
 		
 		self.Owner.AttachedWeaponModel = mdl
 	end
+	self.WeaponOwner = self.Owner
 end
 
 function SWEP:Deploy()
 	self:CreateAttachedModel()
 	self:SetHoldType(self.HoldType)
+	self.Owner.WeaponClass = self.WeaponClass
 	if self.AttachModel then -- Optional, using weapon world model is preferred
 		local mdl = self.Owner.AttachedWeaponModel
 		if mdl then
@@ -103,10 +106,11 @@ function SWEP:Finish()
 		self.Owner.AttachedWeaponModel:SetNoDraw(true)
 	end
 	self.Owner:StripWeapon(self:GetClass())
+	--self.Owner.WeaponClass = nil
 end
 
 function SWEP:OnFinished()
-
+	
 end
 
 function SWEP:DrawHUD()
@@ -119,12 +123,14 @@ function SWEP:Reload()
 end
 
 function SWEP:OnRemove()
-	local mdl = self.Owner.AttachedWeaponModel
-	if IsValid(mdl) then
-		print("Nodrawn", self.Owner)
-		mdl:SetNoDraw(true)
+	if SERVER then
+		local mdl = self.WeaponOwner.AttachedWeaponModel
+		if IsValid(mdl) then
+			print("Nodrawn", self.WeaponOwner)
+			mdl:SetNoDraw(true)
+		end
+		self:OnFinished(self.WeaponOwner)
 	end
-	self:OnFinished(self.Owner)
 end
 
 if SERVER then
@@ -138,6 +144,13 @@ if SERVER then
 			if IsValid(wep) and wep.ReceiveVector then wep:ReceiveVector(net.ReadVector()) end
 		end
 	end)
+	
+	function SWEP:CreateEntity(class)
+		local ent = ents.Create(class)
+		ent.WeaponClass = self.WeaponClass
+		--ent.Owner = self.Owner
+		return ent
+	end
 else
 	function SWEP:SendVector(vec)
 		net.Start("data_weaponpos")

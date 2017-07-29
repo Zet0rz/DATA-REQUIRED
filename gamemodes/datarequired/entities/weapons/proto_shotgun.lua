@@ -40,22 +40,16 @@ function SWEP:PrimaryAttack()
 		local vel5 = speed*self.Owner:GetAimVector()
 		vel5:Rotate(Angle(0,-20,0))
 		
-		local d = DamageInfo()
-		d:SetDamage(100)
-		d:SetDamageType(DMG_BULLET)
-		d:SetAttacker(self.Owner)
-		d:SetInflictor(self)
-		
 		local applyfunc = function(bul) bul.MaxBounces = 1 end
-		self.Owner:FireProjectile(size, pos, vel, d, applyfunc)
-		self.Owner:FireProjectile(size, pos, vel2, d, applyfunc)
-		self.Owner:FireProjectile(size, pos, vel3, d, applyfunc)
-		self.Owner:FireProjectile(size, pos, vel4, d, applyfunc)
-		self.Owner:FireProjectile(size, pos, vel5, d, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel, 100, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel2, 100, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel3, 100, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel4, 100, applyfunc)
+		self.Owner:FireProjectile(size, pos, vel5, 100, applyfunc)
 		
 		self.Owner:EmitSound(shootsound)
 		self:Finish()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_shotgun", 100, Color(150,150,150), SWEP.WorldModel, 2, Vector(0,0,5), Angle(0,0,90))
+GAMEMODE:AddWeaponPickup("proto_shotgun", 100, Color(150,150,150), SWEP.WorldModel, 2, Vector(0,0,5), Angle(0,135,90))

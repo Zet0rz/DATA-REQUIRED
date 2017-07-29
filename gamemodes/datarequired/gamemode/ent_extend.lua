@@ -16,6 +16,8 @@ function ent:FireProjectile(size, pos, vel, d, applyfunc)
 	d:SetAttacker(self.Owner or self)
 	d:SetInflictor(bul)
 	
+	if self.WeaponClass then bul.WeaponClass = self.WeaponClass end
+	
 	bul:SetDamage(d)
 	bul:SetAttacker(self)
 	

@@ -33,7 +33,7 @@ function SWEP:PrimaryAttack()
 	if IsValidGridCoordinate(x,y) then
 		local ply = self.Owner
 		local pos = GetGridCoordinateCenter(x,y)
-		local bomb = ents.Create("prop_physics")
+		local bomb = self:CreateEntity("prop_physics")
 		bomb:SetModel("models/props_junk/watermelon01.mdl")
 		bomb:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
 		bomb:SetNotSolid(true)
@@ -86,13 +86,14 @@ function SWEP:PrimaryAttack()
 				local d = DamageInfo()
 				d:SetDamage(100)
 				d:SetAttacker(ply)
-				d:SetAttacker(bomb)
+				d:SetInflictor(bomb)
 				d:SetDamageType(DMG_BLAST)
 				d:SetDamageForce(Vector(0,0,100000))
 				for k,v in pairs(player.GetAll()) do
 					if v:Alive() then
 						local x3,y3 = v:GetGridCoordinate()
 						if (expls.x[x3] and y3 == y) or (expls.y[y3] and x3 == x) then
+							d:SetDamagePosition(v:GetPos())
 							v:TakeDamageInfo(d)
 						end
 					end
@@ -106,4 +107,4 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_melonbomb", 70, Color(0,255,0), SWEP.AttachModel, 2)
+GAMEMODE:AddWeaponPickup("proto_melonbomb", 70, Color(0,255,0), SWEP.AttachModel, 2.5)

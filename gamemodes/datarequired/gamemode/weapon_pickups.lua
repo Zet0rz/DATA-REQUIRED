@@ -55,7 +55,9 @@ function GM:PickRandomPickupClass()
 	for k,v in pairs(self.EnabledWeapons) do
 		if v then table.insert(tbl, k) end
 	end
-	return tbl[math.random(#tbl)]
+	if #tbl >= 1 then
+		return tbl[math.random(#tbl)]
+	end
 end
 
 GM.WeaponGrid = GM.WeaponGrid or {}
@@ -70,8 +72,10 @@ end
 
 function GM:SpawnWeaponPickup(class)
 	class = class or self:PickRandomPickupClass()
-	local x,y = self:CalculateDesiredWeaponSpawnpoint()
-	self:SpawnWeaponPickupPos(class, x, y)
+	if class then
+		local x,y = self:CalculateDesiredWeaponSpawnpoint()
+		self:SpawnWeaponPickupPos(class, x, y)
+	end
 end
 
 local pattern = "(%d+);(%d+)"

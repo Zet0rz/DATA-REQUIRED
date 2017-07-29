@@ -24,6 +24,16 @@ SWEP.WorldModel = "models/balloons/balloon_star.mdl"
 local time = 5
 SWEP.Purpose		= "You are invulnerable for "..time.." seconds!"
 
+sound.Add({
+	name = "dreq_star",
+	channel = CHAN_AUTO,
+	volume = 0.5,
+	level = 511,
+	pitch = {100},
+	sound = "datarequired/mario_star.wav"
+})
+local soundtime = SoundDuration("datarequired/mario_star.wav") - 0.05
+
 function SWEP:OnDeploy()
 	self.TOKILL = CurTime() + time
 	self.Owner:SetCustomCollisionCheck(true)
@@ -31,14 +41,23 @@ function SWEP:OnDeploy()
 	self.OldSpeed = self.Owner:GetWalkSpeed()
 	self.Owner:SetWalkSpeed(self.OldSpeed*1.3)
 	self.Owner:SetRunSpeed(self.OldSpeed*1.3)
+	
+	self.NextStarSound = CurTime()
 end
 
 function SWEP:Think()
-	if SERVER and self.TOKILL and self.TOKILL < CurTime() then
-		self.Owner.INVULNERABLE = false
-		self.Owner:SetWalkSpeed(self.OldSpeed)
-		self.Owner:SetRunSpeed(self.OldSpeed)
-		self:Finish()
+	if SERVER then
+		if self.TOKILL and self.TOKILL < CurTime() then
+			self.Owner.INVULNERABLE = false
+			self.Owner:SetWalkSpeed(self.OldSpeed)
+			self.Owner:SetRunSpeed(self.OldSpeed)
+			self.Owner:StopSound("dreq_star")
+			self:Finish()
+		end
+		if self.NextStarSound and self.NextStarSound < CurTime() then
+			self.Owner:EmitSound("dreq_star")
+			self.NextStarSound = CurTime() + soundtime
+		end
 	end
 end
 

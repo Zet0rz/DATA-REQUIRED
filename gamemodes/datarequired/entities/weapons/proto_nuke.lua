@@ -32,7 +32,7 @@ SWEP.Instructions = "Click to place Shield - Nuke kills anyone outside after "..
 
 function SWEP:PrimaryAttack()
 	if SERVER and not self.Fired then
-		local shield = ents.Create("data_shield")
+		local shield = self:CreateEntity("data_shield")
 		shield:SetSize(shieldsize)
 		shield:SetPos(self.Owner:GetPos())
 		shield:Spawn()
@@ -45,7 +45,7 @@ function SWEP:PrimaryAttack()
 		e:SetOrigin(shield:GetPos() + dir*math.sqrt(radius))
 		util.Effect("Explosion", e, true) end)
 		
-		local nuke = ents.Create("data_airstrike")
+		local nuke = self:CreateEntity("data_airstrike")
 		nuke:SetPos(GetGridCoordinateCenter(7,4))
 		nuke:Spawn()
 		nuke:SetExplodeFunction(function(self2)

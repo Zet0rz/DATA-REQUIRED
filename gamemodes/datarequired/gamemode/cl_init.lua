@@ -32,6 +32,7 @@ end)
 
 local lastangles = Angle()
 local editdelay = 0
+local toscreen = {x=0,y=0}
 function GM:CreateMove( cmd )
 
 	if LocalPlayer():Alive() then
@@ -40,7 +41,8 @@ function GM:CreateMove( cmd )
 			--cmd:ClearMovement()
 			
 			local x,y = gui.MousePos()
-			local toscreen = LocalPlayer():GetPos():ToScreen()
+			--local toscreen2 = LocalPlayer():GetPos():ToScreen()
+			--if toscreen2.visible then toscreen = toscreen2 end
 			local cx,cy = toscreen.x, toscreen.y
 			
 			local ang = math.deg(math.atan2(cx-x,cy-y))+90
@@ -97,12 +99,40 @@ net.Receive("data_chamberedit", function()
 end)
 
 hook.Add("PrePlayerDraw", "data_playerweapondraws", function(ply)
+	if ply == LocalPlayer() then
+		toscreen = LocalPlayer():GetPos():ToScreen()
+	end
 	local wep = ply:GetActiveWeapon()
 	if IsValid(wep) and wep.PrePlayerDraw and not ply.WEAPONDRAW then
 		ply.WEAPONDRAW = true
 		local val = wep:PrePlayerDraw(ply)
 		ply.WEAPONDRAW = nil
+		ply.INVISIBLE = val
 		return val
+	end
+end)
+
+local playerradius = 30^2
+local textcolor = Color(200,255,200, 100)
+local outlinecolor = Color(0,50,0, 100)
+hook.Add("HUDPaint", "data_playernames", function()
+	local x,y = gui.MousePos()
+	for k,v in pairs(team.GetPlayers(TEAM_TESTSUBJECTS)) do
+		if v:Alive() then
+			local toscreen = v:GetPos():ToScreen()
+			if (toscreen.x-x)^2+(toscreen.y-y)^2 <= playerradius then
+				if not v.DRAWNAME then
+					-- Distort fadein effect
+					ShowScreenDistortions(1, 0.05, toscreen.x-100, toscreen.y-45, 200, 50,0.5)
+					v.DRAWNAME = true
+				end
+				draw.SimpleTextOutlined(v:Nick(), "DATAWeaponDesc", toscreen.x, toscreen.y-15, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, outlinecolor)
+			elseif v.DRAWNAME then
+				-- Distort fadeout effect
+				ShowScreenDistortions(1, 0.05, toscreen.x-100, toscreen.y-45, 200, 50,0.5)
+				v.DRAWNAME = false
+			end
+		end
 	end
 end)
 

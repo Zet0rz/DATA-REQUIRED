@@ -18,6 +18,7 @@ ENT.MaxBounces		= 5
 local beammat = "cable/redlaser.vmt"
 local beamdecaydelay = 0.5
 local beamcolor = Color(255,0,0)
+local ownerinvultime = 0.1
 
 local bouncesound = Sound("weapons/physcannon/energy_bounce1.wav")
 
@@ -32,6 +33,7 @@ function ENT:Initialize()
 		self:SetTrigger(true)
 		self:SetNoDraw(true)
 		self.trail_entity = util.SpriteTrail( self, 0, beamcolor, false, 100, 100, beamdecaydelay, 20, beammat )
+		self.CanKillOwnerTime = CurTime() + ownerinvultime
 	end
 	
 	self:PhysicsInitSphere( 5, "metal_bouncy" )
@@ -90,7 +92,7 @@ function ENT:OnRemove()
 end
 
 function ENT:StartTouch(ent)
-	if ent:IsPlayer() and ent ~= self.Owner then
+	if ent:IsPlayer() and (ent ~= self.Owner or CurTime() > self.CanKillOwnerTime) then
 		local d = DamageInfo()
 		d:SetDamage(100)
 		d:SetDamageType(DMG_DISSOLVE)

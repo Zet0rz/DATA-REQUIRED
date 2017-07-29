@@ -25,7 +25,7 @@ SWEP.AttachScale = 1
 
 function SWEP:PrimaryAttack()
 	if SERVER then
-		local mine = ents.Create("data_mine")
+		local mine = self:CreateEntity("data_mine")
 		mine:SetPos(self.Owner:GetPos())
 		mine.Owner = self.Owner
 		mine:Spawn()
@@ -34,4 +34,4 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_mine", 80, Color(0,0,100), SWEP.AttachModel, 1)
+GAMEMODE:AddWeaponPickup("proto_mine", 80, Color(0,0,100), SWEP.AttachModel, 1.25)

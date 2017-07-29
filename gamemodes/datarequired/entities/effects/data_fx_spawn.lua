@@ -7,9 +7,19 @@ local sound = Sound("ambient/levels/citadel/portal_beam_shoot5.wav")
 function EFFECT:Init( data )
 
 	self.Player = data:GetEntity()
+	if self.Player == LocalPlayer() then
+		self.Velocity = Vector(0,0,1000)
+		self.Size = 20
+		self.RiseDelay = 0.005
+		self.KillTime = CurTime() + 4
+	else
+		self.Velocity = Vector(0,0,300)
+		self.Size = 10
+		self.RiseDelay = 0.01
+		self.KillTime = CurTime() + lifetime
+	end
 	
 	self.NextRiseParticle = CurTime()
-	self.KillTime = CurTime() + lifetime
 	
 	self.Emitter = ParticleEmitter( self.Player:GetPos() )
 	self.Particles = {}
@@ -25,20 +35,20 @@ function EFFECT:Think()
 	if ct >= self.NextRiseParticle then
 		local particle = self.Emitter:Add("sprites/glow04_noz", self.Player:GetPos() + Vector(math.Rand(-10,10), math.Rand(-10,10), 0))
 		if (particle) then
-			particle:SetVelocity( Vector(0,0,300) )
+			particle:SetVelocity( self.Velocity )
 			particle:SetColor(math.random(100,150), math.random(200,255), math.random(100,150))
 			particle:SetLifeTime( 0 )
 			particle:SetDieTime( 1 )
 			particle:SetStartAlpha( 255 )
 			particle:SetEndAlpha( 0 )
-			particle:SetStartSize( 10 )
-			particle:SetEndSize( 10 )
+			particle:SetStartSize( self.Size )
+			particle:SetEndSize( self.Size )
 			particle:SetRoll( math.Rand(0, 36)*10 )
 			--particle:SetRollDelta( math.Rand(-200, 200) )
 			particle:SetAirResistance( 10 )
 			particle:SetGravity( Vector( 0, 0, 0 ) )
 			
-			self.NextRiseParticle = CurTime() + riseparticledelay
+			self.NextRiseParticle = CurTime() + self.RiseDelay
 		end
 	end
 	if self.KillTime < ct then

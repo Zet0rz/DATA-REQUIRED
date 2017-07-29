@@ -140,7 +140,15 @@ function GM:PostPlayerDeath(ply)
 		if IsValid(ply) or team.NumPlayers(TEAM_TESTSUBJECTS) <= 1 then self:EndRound(ply) end
 	end
 end
+
+util.AddNetworkString("data_killfeed")
 function GM:PlayerDeath(victim, inflictor, attacker)
+	net.Start("data_killfeed")
+		net.WriteEntity(attacker)
+		net.WriteEntity(victim)
+		net.WriteString(IsValid(inflictor) and inflictor.WeaponClass or victim.DeathClass)
+	net.Broadcast()
+	
 	victim:SetTeam(TEAM_DEAD)
 end
 function GM:PlayerDeathThink(ply)
@@ -223,14 +231,17 @@ function GM:PlayerHurt(ply, attacker, health, dmg)
 end
 
 hook.Add("PlayerShouldTakeDamage", "data_playerinvulnerable", function(ply, att)
-	if ply.INVULNERABLE or att.Owner == ply then return false end
+	--if ply.INVULNERABLE or att.Owner == ply then return false end
+	if ply.INVULNERABLE then return false end
 end)
 
 function GetCamPos()
 	return campos
 end
 
-function GM:DoPlayerDeath( ply, attacker, dmginfo )
+function GM:DoPlayerDeath(ply, attacker, dmginfo)
+	local wep = ply:GetActiveWeapon()
+	if IsValid(wep) then wep:Finish() end
 	ply:CreateRagdoll()
 	ply:AddDeaths(1)
 	

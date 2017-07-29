@@ -49,7 +49,7 @@ if SERVER then
 			if net.ReadBool() then
 				local name = net.ReadString()
 				if name and name ~= "" then
-					--GAMEMODE:SaveMazeToFile(name, GAMEMODE.CurrentMap)
+					GAMEMODE:SaveMazeToFile(name, GAMEMODE.CurrentMap)
 					GAMEMODE:LoadMaze(name, GAMEMODE.CurrentMap)
 					net.Start("data_mazes")
 						net.WriteBool(false)
@@ -261,6 +261,8 @@ else
 			mazepreview = tbl
 		else
 			local tbl = net.ReadTable()
+			local sorted = table.GetKeys(tbl)
+			table.sort(sorted, function(a,b) return a<b end)
 			local admin = LocalPlayer():IsSuperAdmin()
 			
 			if IsValid(mazesheet) then
@@ -268,7 +270,8 @@ else
 					v:Remove()
 				end
 				local x,y = mazesheet:GetSize()
-				for k,v in pairs(tbl) do
+				for _,k in pairs(sorted) do
+					local v = tbl[k] -- We're going alphabetically here
 					local p = vgui.Create("DPanel")
 					p:SetSize(278,40)
 					p.Paint = function(self,w,h)
@@ -353,7 +356,7 @@ else
 		local weaponmodel = vgui.Create("DPanel", weaponinfo)
 		local modelpanel = vgui.Create("DModelPanel", weaponmodel)
 		modelpanel:Dock(FILL)
-		modelpanel:SetCamPos(Vector(0,0,125))
+		modelpanel:SetCamPos(Vector(0,0,100))
 		modelpanel:SetLookAng(Angle(90,0,0))
 		
 		function modelpanel:LayoutEntity(Entity)
@@ -448,7 +451,11 @@ else
 		weaponlayout:Dock(FILL)
 		weaponlayout:SetSpaceX(5)
 		weaponlayout:SetSpaceY(5)
-		for k,v in pairs(weapondata) do
+		
+		local sorted = table.GetKeys(weapondata)
+		table.sort(sorted, function(a,b) return a<b end)		
+		for _,k in pairs(sorted) do
+			local v = weapondata[k]
 			local wep = weapons.Get(k)
 			if wep then
 				local p = vgui.Create("DPanel")

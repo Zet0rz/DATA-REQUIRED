@@ -35,7 +35,7 @@ else
 	function SWEP:ReceiveVector(vec)
 		print("Gotten", vec)
 		if not self.Fired then
-			local missile = ents.Create("data_airstrike")
+			local missile = self:CreateEntity("data_airstrike")
 			missile:SetPos(vec)
 			missile.Owner = self.Owner
 			missile:Spawn()
@@ -46,4 +46,4 @@ else
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_airstrike", 100, Color(255,100,0), SWEP.AttachModel, 2)
+GAMEMODE:AddWeaponPickup("proto_airstrike", 100, Color(255,100,0), SWEP.AttachModel, 2.5, nil, Angle(0,90,0))

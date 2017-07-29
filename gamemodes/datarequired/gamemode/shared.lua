@@ -32,10 +32,12 @@ GM.Website = "https://youtube.com/Zet0r"
 	✓	Logo and menu icon, workshop logo
 	✓	Bullet bounce on some weapons
 	✓	F1 menu for map editing
-	-	More maps
-	-	Weapon balancing
-	-	Killfeed
+	✓	More maps
+	?	Weapon balancing
+	✓	Killfeed
 	✓	Actual round starting (without having to lua_run it)
+	✓	Name when hovering over player
+	-	Multikill announcer/text?
 	
 	Weapon idea list:
 	#	Lua	Fx	Description
@@ -69,15 +71,16 @@ GM.Website = "https://youtube.com/Zet0r"
 	-	Music intensity based on weaponry usage?
 	-	Faster gameplay? (aim for shorter rounds)
 	-	Ping effect to prevent hiding?
+	-	Alive counter
 	
 	Bugs:
-	-	Weapon models sometimes attaching to opposite hand? (On spawn changes hands, model change?)
-	-	weapon:EmitSound not working serverside in multiplayer?
-	-	Weapon attachments not disappearing on death
-	-	Laser killing yourself
+	✓	Weapon models sometimes attaching to opposite hand? (On spawn changes hands, model change?)
+	/	weapon:EmitSound not working serverside in multiplayer?
+	✓	Weapon attachments not disappearing on death
+	✓	Laser killing yourself
 	-	Some weapon models are errors (Fragment, sniper, gatling, nuke shield)
-	-	Scoreboard doesn't get smalle on removal of player
-	-	Fragment bomb erroring if owner dies first (weapon no longer valid, PrimaryAttack)
+	✓	Scoreboard doesn't get smaller on removal of player
+	✓	Fragment bomb erroring if owner dies first (weapon no longer valid, PrimaryAttack)
 	
 ]]
 

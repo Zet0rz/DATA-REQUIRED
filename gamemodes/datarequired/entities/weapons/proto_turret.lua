@@ -27,8 +27,8 @@ SWEP.Instructions	= "LMB to deploy Turret - Turret lasts for "..duration.." seco
 
 function SWEP:PrimaryAttack()
 	if SERVER then
-		local turret = ents.Create("data_turret")
-		turret:SetPos(self.Owner:GetPos())
+		local turret = self:CreateEntity("data_turret")
+		turret:SetPos(self.Owner:GetPos() + Vector(0,0,10))
 		turret:SetDuration(duration)
 		turret:SetRange(500)
 		turret:SetDamage(100)
@@ -47,4 +47,4 @@ function SWEP:OnRemove()
 	
 end
 
-GAMEMODE:AddWeaponPickup("proto_turret", 70, Color(100,0,0), SWEP.AttachModel, 1, Vector(-10,0,0))
+GAMEMODE:AddWeaponPickup("proto_turret", 70, Color(100,0,0), SWEP.AttachModel, 1.5, Vector(-10,10,0), Angle(0,-45,0))

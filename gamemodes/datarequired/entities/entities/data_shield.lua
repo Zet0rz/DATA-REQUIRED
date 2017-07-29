@@ -38,8 +38,8 @@ if CLIENT then
 		local size = self:GetSize()
 		local size2 = size*1.25
 		render.DrawQuadEasy(pos, Vector(0, 0, 1), size2, size2, col, 0)
-		--render.SetMaterial(shieldmat2)
-		render.SetColorMaterial()
+		render.SetMaterial(shieldmat2)
+		--render.SetColorMaterial()
 		render.DrawSphere(pos, size/2, 50, 50, col)
 		--self:DrawModel()
 	end

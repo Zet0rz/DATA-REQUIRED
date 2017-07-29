@@ -79,4 +79,4 @@ function SWEP:PrePlayerDraw(ply)
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_cloakanddagger", 100, Color(0,0,0), model, 1.5)
+GAMEMODE:AddWeaponPickup("proto_cloakanddagger", 100, Color(100,100,100), model, 2, nil, Angle(0,135,0))

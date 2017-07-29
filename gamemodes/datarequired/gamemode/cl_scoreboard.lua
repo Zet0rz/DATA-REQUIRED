@@ -177,7 +177,7 @@ local PLAYER_LINE = {
 
 		if ( !IsValid( self.Player ) ) then
 			self:SetZPos( 9999 ) -- Causes a rebuild
-			self:GetParent():GetParent().NumPlayers = #player.GetAll()
+			g_Scoreboard.NumPlayers = #player.GetAll()
 			self:Remove()
 			return
 		end
@@ -418,4 +418,169 @@ function GM:HUDDrawScoreBoard()
 end
 
 --g_Scoreboard = vgui.CreateFromTable( SCORE_BOARD )
---g_Scoreboard:Hide()
+
+--[[---------------------------------------------------------
+	Killfeed
+	A killfeed built on vgui so it can render weapon too
+-----------------------------------------------------------]]
+
+-- The killfeed line element
+local weaponmat = Material("SGM/playercircle")
+local w,h = 500,50
+local kills = {}
+local fadeouttime = 10
+
+local enemycolor = Color(255,100,100)
+local friendlycolor = Color(100,255,100)
+
+local KILLFEED_LINE = {
+	Init = function(self)
+		--self:SetMouseInputEnabled(false)
+		self:SetSize(w,h)
+		self.FadeoutTime = CurTime() + fadeouttime
+		
+		--[[self.Avatar = vgui.Create( "AvatarImage", self )
+		self.Avatar:SetSize(32, 32)
+		self.Avatar:SetMouseInputEnabled(false)
+		
+		self.Avatar2 = vgui.Create( "AvatarImage", self )
+		self.Avatar2:SetSize(32, 32)
+		self.Avatar2:SetMouseInputEnabled(false)]]
+		
+		--[[self.Name = vgui.Create("DLabel", self)
+		self.Name:SetFont("DATAScoreboard1")
+		self.Name:SetText("Name 1")
+		self.Name:SetTextColor(textcolor)
+		self.Name:SetSize(w/2-h/2-40-5,h)
+		self.Name:SetPos(40,0)
+		self.Name:SetContentAlignment(6)
+		
+		self.Name2 = vgui.Create("DLabel", self)
+		self.Name2:SetFont("DATAScoreboard1")
+		self.Name2:SetText("Name 2")
+		self.Name2:SetTextColor(textcolor)
+		self.Name2:SetSize(w/2-h/2-40-5,h)
+		self.Name2:SetPos(w/2+h/2+5,0)
+		self.Name2:SetContentAlignment(4)]]
+		
+		self.WeaponPanel = vgui.Create("DPanel", self)
+		local modelpanel = vgui.Create("DModelPanel", self.WeaponPanel)
+		modelpanel:Dock(FILL)
+		modelpanel:SetCamPos(Vector(0,0,65))
+		modelpanel:SetLookAng(Angle(90,0,0))
+		modelpanel:SetMouseInputEnabled(false)
+		function modelpanel:LayoutEntity(Entity)
+			-- Don't move
+		end
+		
+		self.WeaponPanel.Paint = function(self2,w,h)
+			surface.SetMaterial(weaponmat)
+				local radius = 20
+			if self.Weapon and GAMEMODE.WeaponPickups[self.Weapon] then
+				local data = GAMEMODE:GetWeaponPickup(self.Weapon)
+				local col = data.color
+				surface.SetDrawColor(col.r,col.g,col.b)
+				surface.DrawTexturedRect(w/2-radius,h/2-radius,radius*2,radius*2)
+			else
+				surface.SetDrawColor(255,255,255)
+				surface.DrawTexturedRect(w/2-radius,h/2-radius,radius*2,radius*2)
+				draw.SimpleTextOutlined("?", "DATAScoreboard1", w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+			end
+		end
+		self.WeaponPanel:SetSize(h,h)
+		self.WeaponPanel:SetPos(w/2-h/2,0)
+		self.WeaponPanel.LoadWeapon = function(self2, class)
+			if class and GAMEMODE.WeaponPickups[class] then
+				local data = GAMEMODE:GetWeaponPickup(self.Weapon)
+				modelpanel:SetModel(data.model)
+				local ent = modelpanel:GetEntity()
+				if data.offset then ent:SetPos(data.offset) else ent:SetPos(Vector(0,0,0)) end
+				if data.angle then ent:SetAngles(data.angle) else ent:SetAngles(Angle(0,0,0)) end
+				if data.scale then ent:SetModelScale(data.scale) else ent:SetModelScale(1) end
+			end
+		end
+	end,
+
+	Setup = function(self, attacker, victim, weapon)
+		self.Attacker = attacker
+		self.Victim = victim
+		self.Weapon = weapon
+
+		if IsValid(self.Avatar) then self.Avatar:SetPlayer(attacker) end
+		if IsValid(self.Avatar2) then self.Avatar2:SetPlayer(victim) end
+		
+		--self.Name:SetText(attacker:Nick())
+		--self.Name2:SetText(victim:Nick().."2")
+		
+		
+		
+		self.WeaponPanel:LoadWeapon(weapon)
+
+		self:Think(self)
+	end,
+
+	Think = function(self)
+		if self.FadeoutTime < CurTime() then
+			kills[self.Index] = nil
+			self:Remove()
+		end
+	end,
+
+	Paint = function(self, w, h)
+		local x,y = self:LocalToScreen(0,0)
+		if not self.DRAWEFFECT then
+			ShowScreenDistortions(5, 0.2, x, y, w, h*2)
+			self.DRAWEFFECT = true
+		end
+		
+		if IsValid(self.Attacker) then
+			local name = self.Attacker:Nick()
+			if string.len(name) > 17 then
+				name = string.sub(name, 0, 15).."..."
+			end
+			draw.SimpleTextOutlined(name, "DATAScoreboard1", w/2-h/2-5, h/2, self.Attacker == LocalPlayer() and friendlycolor or enemycolor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, 2, outlinecolor)
+		end
+		if IsValid(self.Victim) then
+			local name = self.Victim:Nick()
+			if string.len(name) > 17 then
+				name = string.sub(name, 0, 15).."..."
+			end
+			draw.SimpleTextOutlined(name, "DATAScoreboard1", w/2+h/2+5, h/2, self.Victim == LocalPlayer() and friendlycolor or enemycolor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 2, outlinecolor)
+		end
+	end,
+	
+	PerformLayout = function(self)
+		self:SetPos(0, -40+h*self.Index)
+	end,
+}
+KILLFEED_LINE = vgui.RegisterTable( KILLFEED_LINE, "DPanel" )
+
+if IsValid(g_Killfeed) then
+	g_Killfeed:Remove()
+end
+g_Killfeed = vgui.Create("DPanel")
+g_Killfeed:SetMouseInputEnabled(false)
+g_Killfeed:SetSize(w,h*6+2)
+g_Killfeed:SetPos(ScrW()-w-5)
+g_Killfeed:SetVisible(true)
+g_Killfeed.Paint = function() end
+
+function AddKillfeedEntry(attacker, victim, weapon)
+	local line = vgui.CreateFromTable(KILLFEED_LINE, g_Killfeed)
+	line:Setup(attacker, victim, weapon)
+	--line:KillFocus()
+	--line:SetPos(ScrW()-w-10, 10)
+	table.insert(kills, 1, line)
+	for k,v in ipairs(kills) do
+		v.Index = k
+		v:InvalidateLayout()
+	end
+end
+
+net.Receive("data_killfeed", function()
+	local attacker = net.ReadEntity()
+	local victim = net.ReadEntity()
+	local weapon = net.ReadString()
+	
+	AddKillfeedEntry(attacker, victim, weapon)
+end)

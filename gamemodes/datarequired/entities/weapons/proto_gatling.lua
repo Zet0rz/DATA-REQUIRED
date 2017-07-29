@@ -60,4 +60,4 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_gatling", 100, Color(150,150,150), SWEP.AttachModel, 2)
+GAMEMODE:AddWeaponPickup("proto_gatling", 100, Color(150,150,150), SWEP.AttachModel, 1.75, nil, Angle(0,-45,0))

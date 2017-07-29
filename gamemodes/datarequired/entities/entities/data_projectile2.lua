@@ -87,6 +87,7 @@ function ENT:StartTouch(ent)
 	if ent:CreatedByMap() or (not ent.NoBulletHit and (ent != self.Attacker or CurTime() > self.ShooterSafeTime)) then
 		self.Damage:SetDamagePosition(self:GetPos())
 		self.Damage:SetDamageForce(self:GetVelocity())
+		ent.DeathClass = self.WeaponClass
 		ent:TakeDamageInfo(self.Damage)
 		
 		if self.Bounces >= self.MaxBounces and (not self.CollideFunc or not self:CollideFunc(ent)) then self:Remove() else self.Bounces = self.Bounces + 1 end

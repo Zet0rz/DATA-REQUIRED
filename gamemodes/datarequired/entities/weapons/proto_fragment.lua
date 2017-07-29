@@ -33,35 +33,35 @@ local numfragments = 30
 local shootsound = Sound("weapons/ar2/ar2_altfire.wav")
 local explodesound = Sound("weapons/ar2/npc_ar2_altfire.wav")
 
+local explodefunc = function(bul, weapon, owner)
+	sound.Play(explodesound, bul:GetPos(), 511, 100, 1)
+	bul:Remove()
+	
+	for i = 1, numfragments do
+		local vel = Angle(0,360/numfragments*i,0):Forward()*fragmentspeed
+		local bul2 = owner:FireProjectile(fragmentsize, bul:GetPos(), vel, 100)
+		bul2.WeaponClass = "proto_fragment"
+	end
+end
+
 function SWEP:PrimaryAttack()
 	if SERVER then
-		if not IsValid(self.Bullet) then
-			
-			
+		if not IsValid(self.Bullet) then			
 			local bullet = self.Owner:FireProjectileAim(size, speed, 100)
+			local owner = self.Owner
 			bullet:SetCollideFunction(function(self2, ent)
-				self:PrimaryAttack()
+				explodefunc(self2, self, owner)
+				if IsValid(self) then self:Finish() end
 			end)
+			bullet.WeaponClass = "proto_fragment"
 			self.Bullet = bullet
-			self:EmitSound(shootsound)
+			self.Owner:EmitSound(shootsound)
 		else
-			sound.Play(explodesound, self.Bullet:GetPos(), 511, 100, 1)
-			self.Bullet:Remove()
-			local d = DamageInfo()
-			d:SetDamage(100)
-			d:SetDamageType(DMG_BULLET)
-			d:SetAttacker(self.Owner)
-			d:SetInflictor(self)
-			
-			for i = 1, numfragments do
-				local vel = Angle(0,360/numfragments*i,0):Forward()*fragmentspeed
-				self.Owner:FireProjectile(fragmentsize, self.Bullet:GetPos(), vel, d)
-			end
-			
+			explodefunc(self.Bullet, self, self.Owner)
 			self:Finish()
 		end
 	end
 	
 end
 
-GAMEMODE:AddWeaponPickup("proto_fragment", 100, Color(250,250,150), SWEP.AttachModel, 3, Vector(10,-5,0))
+GAMEMODE:AddWeaponPickup("proto_fragment", 100, Color(250,250,150), SWEP.AttachModel, 3, Vector(5,-10,0), Angle(0,-45,0))

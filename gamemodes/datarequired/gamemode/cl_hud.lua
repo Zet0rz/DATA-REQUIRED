@@ -19,6 +19,10 @@ local y = 50
 local damagetime = 0
 local damagescale = 0
 local lasthealth = 0
+
+local textcolor = Color(150,255,150)
+local outlinecolor = Color(0,50,0,200)
+
 hook.Add("HUDPaint", "data_healthhud", function()
 	local w,h = ScrW(),ScrH()
 	local health = LocalPlayer():Health()
@@ -63,6 +67,24 @@ hook.Add("HUDPaint", "data_healthhud", function()
 	surface.DrawRect(tx, ty, tw, th)
 	surface.SetDrawColor(150,255,150,100)
 	surface.DrawRect(tx2, ty2, tw2, th2)
+	
+	-- Living player counter
+	surface.SetDrawColor(0,20,0,150)
+	surface.DrawRect(tx+tw+55,ty,60,th)
+	surface.SetDrawColor(0,20,0,220)
+	surface.DrawRect(tx+tw+5,ty,50,th)
+	draw.SimpleTextOutlined(team.NumPlayers(TEAM_TESTSUBJECTS), "DATAWeaponName", tx+tw+5+25, ty+25, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+	draw.SimpleTextOutlined("Live", "DATAWeaponInstructions", tx+tw+5+55, ty+27, textcolor, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 2, outlinecolor)
+	draw.SimpleTextOutlined("Subjects", "DATAScoreboard2.5", tx+tw+5+55, ty+43, textcolor, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 2, outlinecolor)
+	
+	-- F1 indicator
+	surface.SetDrawColor(0,20,0,150)
+	surface.DrawRect(tx-115,ty,60,th)
+	surface.SetDrawColor(0,20,0,220)
+	surface.DrawRect(tx-55,ty,50,th)
+	draw.SimpleTextOutlined("F1", "DATAWeaponDesc", tx-30, ty+25, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, outlinecolor)
+	draw.SimpleTextOutlined("Data", "DATAWeaponInstructions", tx-60, ty+27, textcolor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 2, outlinecolor)
+	draw.SimpleTextOutlined("Console", "DATAScoreboard2.5", tx-60, ty+43, textcolor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 2, outlinecolor)
 end)
 
 -- Weapon HUD
@@ -137,20 +159,24 @@ hook.Add("HUDPaint", "data_weaponhud", function()
 end)
 
 local effecttime = 0
-function ShowScreenDistortions(max, time, x, y, w, h)
+local distorts = {}
+function ShowScreenDistortions(max, time, x, y, w, h, scale)
 	effecttime = CurTime() + time
-	hook.Add("HUDPaint", "data_distortions", function()
-		local num = math.random(max)
+	table.insert(distorts, {max = max, time = effecttime, x = x, y = y, w = w, h = h, scale = scale or 1})
+end
+hook.Add("HUDPaint", "data_distortions", function()
+	for k,v in pairs(distorts) do
+		local num = math.random(v.max)
 		surface.SetDrawColor(150,255,150,100)
 		for i = 1, num do
-			local rw = math.random(10,100)
-			local rh = math.random(10,30)
-			local rx = math.random(w-rw)
-			local ry = math.random(h-rh)
-			surface.DrawRect(x+rx, y+ry, rw, rh)
+			local rw = math.random(10,100)*v.scale
+			local rh = math.random(10,30)*v.scale
+			local rx = math.random(v.w-rw)
+			local ry = math.random(v.h-rh)
+			surface.DrawRect(v.x+rx, v.y+ry, rw, rh)
 		end
-		if CurTime() > effecttime then
-			hook.Remove("HUDPaint", "data_distortions")
+		if CurTime() > v.time then
+			distorts[k] = nil
 		end
-	end)
-end
+	end
+end)

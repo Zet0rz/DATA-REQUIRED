@@ -30,7 +30,7 @@ local shootsound = Sound("weapons/irifle/irifle_fire2.wav")
 
 function SWEP:PrimaryAttack()
 	if SERVER then
-		local laser = ents.Create("data_laserhead")
+		local laser = self:CreateEntity("data_laserhead")
 		laser:SetPos(self.Owner:GetShootPos() + self.Owner:GetAimVector()*25)
 		laser:Spawn()
 		laser.Owner = self.Owner
@@ -42,4 +42,4 @@ function SWEP:PrimaryAttack()
 	end
 end
 
-GAMEMODE:AddWeaponPickup("proto_laser", 100, Color(255,0,0), SWEP.AttachModel, 0.75)
+GAMEMODE:AddWeaponPickup("proto_laser", 100, Color(255,0,0), SWEP.AttachModel, 0.75, Vector(-25,5,0), Angle(180,90,90))
