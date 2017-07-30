@@ -44,7 +44,7 @@ function SWEP:PrimaryAttack()
 		
 		timer.Simple(delay, function()
 			if IsValid(bomb) then
-				local expls = {x = {}, y = {}}
+				local expls = {x = {[x]=true}, y = {[y]=true}}
 				local x2 = x+1
 				while (IsValidGridCoordinate(x2,y)) do
 					if GAMEMODE.CurrentMap.wally[x2][y] then break end

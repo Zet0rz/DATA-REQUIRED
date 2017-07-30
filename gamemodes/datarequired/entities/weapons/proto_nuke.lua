@@ -26,7 +26,7 @@ SWEP.AttachAngle = Angle(90,0,0)
 local nukemdl = "models/props_phx/ww2bomb.mdl"
 
 local delay = 4
-local shieldsize = 1000
+local shieldsize = 750
 local radius = (shieldsize/2)^2
 SWEP.Instructions = "Click to place Shield - Nuke kills anyone outside after "..delay.." seconds"
 
@@ -38,13 +38,7 @@ function SWEP:PrimaryAttack()
 		shield:Spawn()
 		self.Fired = true
 		
-		local ply = self.Owner
-		
-		timer.Simple(1, function() local dir = (ply:GetPos()-shield:GetPos()):GetNormalized()
-		local e = EffectData()
-		e:SetOrigin(shield:GetPos() + dir*math.sqrt(radius))
-		util.Effect("Explosion", e, true) end)
-		
+		local ply = self.Owner		
 		local nuke = self:CreateEntity("data_airstrike")
 		nuke:SetPos(GetGridCoordinateCenter(7,4))
 		nuke:Spawn()

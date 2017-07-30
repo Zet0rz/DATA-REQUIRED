@@ -128,16 +128,7 @@ end
 
 function GM:PostPlayerDeath(ply)
 	if SERVER and self.RoundOngoing then
-		local ply
-		for k,v in pairs(team.GetPlayers(TEAM_TESTSUBJECTS)) do
-			local owner = v.Owner or v -- Players can "belong" to other players and not count
-			if ply and ply ~= owner then -- More than 1 alive
-				ply = NULL
-			else
-				ply = owner
-			end
-		end
-		if IsValid(ply) or team.NumPlayers(TEAM_TESTSUBJECTS) <= 1 then self:EndRound(ply) end
+		self.CHECKPLAYERS = true
 	end
 end
 
@@ -146,7 +137,7 @@ function GM:PlayerDeath(victim, inflictor, attacker)
 	net.Start("data_killfeed")
 		net.WriteEntity(attacker)
 		net.WriteEntity(victim)
-		net.WriteString(IsValid(inflictor) and inflictor.WeaponClass or victim.DeathClass)
+		net.WriteString(IsValid(inflictor) and inflictor.WeaponClass or victim.DeathClass or "")
 	net.Broadcast()
 	
 	victim:SetTeam(TEAM_DEAD)

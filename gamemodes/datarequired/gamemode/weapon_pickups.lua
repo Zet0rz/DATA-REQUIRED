@@ -113,6 +113,20 @@ function GM:Think()
 		self:SpawnWeaponPickup(self:PickRandomPickupClass())
 		nextspawn = ct + spawndelay:GetInt()
 	end
+	
+	if self.CHECKPLAYERS then
+		local ply
+		for k,v in pairs(team.GetPlayers(TEAM_TESTSUBJECTS)) do
+			local owner = v.Owner or v -- Players can "belong" to other players and not count
+			if ply and ply ~= owner then -- More than 1 alive
+				ply = NULL
+			else
+				ply = owner
+			end
+		end
+		if IsValid(ply) or team.NumPlayers(TEAM_TESTSUBJECTS) <= 1 then self:EndRound(ply) end
+		self.CHECKPLAYERS = false
+	end
 end
 cvars.AddChangeCallback("dreq_weaponfrequency", function(convar, old, new)
 	local num = tonumber(new)

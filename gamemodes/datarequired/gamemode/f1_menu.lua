@@ -38,7 +38,7 @@ if SERVER then
 			local target = net.ReadEntity()
 			if IsValid(target) then
 				target:EnableEditor(not target:GetEditing())
-				ply:ChatPrint(target:GetEditing() and target:Nick().." is not editing" or target:Nick().." is no longer editing")
+				ply:ChatPrint(target:GetEditing() and target:Nick().." is now editing" or target:Nick().." is no longer editing")
 			end
 		end
 	end)
